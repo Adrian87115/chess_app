@@ -19,3 +19,25 @@ class Board:
 
     def getFigure(self, x, y):
         return self.board[x][y]
+
+    def isKingInCheck(self, color):
+        king_pos = self.getKingPosition(color)
+        if not king_pos:
+            return False
+        king_x, king_y = king_pos
+
+        for row in self.board:
+            for piece in row:
+                if piece != "." and piece.color != color:
+                    if (king_x, king_y) in piece.validMoves(self.board):
+                        return True
+        return False
+
+    def getKingPosition(self, color):
+        for y in range(8):
+            for x in range(8):
+                piece = self.board[y][x]
+                if isinstance(piece, p.King) and piece.color == color:
+                    return (x, y)
+
+        return None

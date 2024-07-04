@@ -1,3 +1,6 @@
+import sys
+sys.setrecursionlimit(900000000)
+
 class Piece:
     def __init__(self, x, y, color):
         self.x = x
@@ -230,9 +233,39 @@ class King(Piece):
         enemy_moves = set()
         for row in board:
             for piece in row:
-                if piece != "." and piece.color != self.color:
-                    for move in piece.validMoves(board):
-                        enemy_moves.add(move)
+                if piece != "." and piece.color != self.color:#new thing when diagonally checked then still can move back to checked square
+
+                    if (piece.shape == "p" or piece.shape == "P") and abs(piece.x - self.x) <= 4 or abs(piece.y - self.y) <= 3:
+                        direction = -1 if piece.color == "white" else 1
+                        curr_x = piece.x
+                        curr_y = piece.y + direction
+                        new_x_left = curr_x - 1
+                        new_x_right = curr_x + 1
+                        if 0 <= new_x_left < 8 and 0 <= curr_y < 8:
+                            enemy_moves.add((new_x_left, curr_y))
+                        if 0 <= new_x_right < 8 and 0 <= curr_y < 8:
+                            enemy_moves.add((new_x_right, curr_y))
+
+                    if (piece.shape == "r" or piece.shape == "R") and ((piece.x == self.x or piece.y == self.y) or (abs(piece.x - self.x) == 1 or abs(piece.y - self.y) == 1)):
+                        for move in piece.validMoves(board):
+                            enemy_moves.add(move)
+
+                    if (piece.shape == "q" or piece.shape == "Q") and ((piece.x == self.x or piece.y == self.y) or (abs(piece.x - self.x) == 1 or abs(piece.y - self.y) == 1)):
+                        for move in piece.validMoves(board):
+                            enemy_moves.add(move)
+
+                    if (piece.shape == "b" or piece.shape == "B") and (abs(piece.x - self.x) == abs(piece.y - self.y) or (abs(piece.x - self.x - 1) == abs(piece.y - self.y)) or (abs(piece.x - self.x) == abs(piece.y - self.y - 1))):
+                        for move in piece.validMoves(board):
+                            enemy_moves.add(move)
+
+                    if (piece.shape == "q" or piece.shape == "Q") and (abs(piece.x - self.x) == abs(piece.y - self.y) or (abs(piece.x - self.x - 1) == abs(piece.y - self.y)) or (abs(piece.x - self.x) == abs(piece.y - self.y - 1))):
+                        for move in piece.validMoves(board):
+                            enemy_moves.add(move)
+
+                    if (piece.shape == "kn" or piece.shape == "Kn") and abs(piece.x - self.x) <= 3 and abs(piece.y - self.y) <= 3:
+                        for move in piece.validMoves(board):
+                            enemy_moves.add(move)
+
         return enemy_moves
 
     def isCheck(self, board):
@@ -265,12 +298,22 @@ class King(Piece):
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         curr_x = self.x
         curr_y = self.y
-
+        invalid_moves = self.getAllEnemyMoves(board)
         for d_x, d_y in directions:
             new_x = curr_x + d_x
             new_y = curr_y + d_y
 
             if 0 <= new_x < 8 and 0 <= new_y < 8:
-                if (self.isSquareEmpty(new_x, new_y, board) or self.isSquareEnemyPiece(new_x, new_y, board)) and not self.causesCheck(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
+                if (self.isSquareEmpty(new_x, new_y, board) or self.isSquareEnemyPiece(new_x, new_y, board)) and (new_x, new_y) not in invalid_moves:
+                    if self.isSquareEnemyPiece(new_x, new_y, board):
+                        if not self.causesCheck(new_x, new_y, board):
+                            valid_moves.append((new_x, new_y))
+                    else:
+                        valid_moves.append((new_x, new_y))
+
+        for row in board:
+            for piece in row:
+                if piece != "." and piece.shape.lower() == "ki" and piece.color != self.color:
+                    enemy_king = (piece.x, piece.y)
+                    valid_moves = [move for move in valid_moves if abs(move[0] - enemy_king[0]) >= 2 or abs(move[1] - enemy_king[1]) >= 2]
         return valid_moves

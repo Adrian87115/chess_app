@@ -20,7 +20,7 @@ class Game:
                        "ki": pygame.image.load("images/king_black.png")}
 
     def drawBoard(self, screen):
-        colors = [pygame.Color(190, 190, 190), pygame.Color(60, 60, 60)]
+        colors = [pygame.Color(160, 160, 160), pygame.Color(60, 60, 60)]
         for row in range(8):
             for col in range(8):
                 color = colors[(row + col) % 2]
@@ -47,7 +47,9 @@ class Game:
                  0: "black"}
         selected = False
         valid_moves = []
-        unvalid_moves_king = []
+        king_check = False
+        king_pos = None
+
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -59,9 +61,12 @@ class Game:
                         if 0 <= x < 8 and 0 <= y < 8:
                             selected_piece = self.board.getFigure(y, x)
                             if selected_piece != "." and selected_piece.color == self.current_turn:
-                                print(f"Selected piece at ({x}, {y}): {selected_piece}")
-                                selected = True
-                                valid_moves = selected_piece.validMoves(self.board.board)
+                                if king_check and selected_piece.shape.lower() != "ki":
+                                    print("Only the king can be moved when in check")
+                                else:
+                                    print(f"Selected piece at ({x}, {y}): {selected_piece}")
+                                    selected = True
+                                    valid_moves = selected_piece.validMoves(self.board.board)
 
                             else:
                                 print("Not a valid piece or not your turn")
@@ -82,6 +87,8 @@ class Game:
                                     print(f"Moved {selected_piece} to ({x}, {y})")
                                     selected = False
                                     valid_moves = []
+                                    king_check = self.board.isKingInCheck(self.current_turn)
+                                    king_pos = self.board.getKingPosition(self.current_turn) if king_check else None
                                 else:
                                     print(f"Invalid move for {selected_piece} to ({x}, {y})")
                         else:
@@ -89,6 +96,9 @@ class Game:
 
 
             self.drawBoard(screen)
+            if king_check and king_pos:
+                pygame.draw.rect(screen, pygame.Color(255, 0, 0),
+                                 pygame.Rect(king_pos[0] * 65, king_pos[1] * 65, 65, 65), 3)
             if selected:
                 pygame.draw.rect(screen, pygame.Color(0, 0, 150),
                     pygame.Rect(selected_piece.x * 65, selected_piece.y * 65, 65, 65), 3)
