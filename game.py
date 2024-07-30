@@ -6,7 +6,7 @@ class Game:
     def __init__(self):
         self.board = b.Board()
         self.current_turn = "white"
-        self.images = {"P" : pygame.image.load("images/pawn_white.png"),
+        self.images = {"P": pygame.image.load("images/pawn_white.png"),
                        "p": pygame.image.load("images/pawn_black.png"),
                        "R": pygame.image.load("images/rook_white.png"),
                        "r": pygame.image.load("images/rook_black.png"),
@@ -18,6 +18,7 @@ class Game:
                        "q": pygame.image.load("images/queen_black.png"),
                        "Ki": pygame.image.load("images/king_white.png"),
                        "ki": pygame.image.load("images/king_black.png")}
+        self.messages = []
 
     def drawBoard(self, screen):
         colors = [pygame.Color(160, 160, 160), pygame.Color(60, 60, 60)]
@@ -32,6 +33,15 @@ class Game:
                 if piece != ".":
                     screen.blit(self.images[piece.shape], (piece.x * 65, piece.y * 65))
 
+    def drawMessages(self, screen):
+        font = pygame.font.SysFont(None, 24)
+        message_area = pygame.Rect(0, 520, 520, 80)  # Define the area for messages
+        pygame.draw.rect(screen, pygame.Color(0, 0, 0), message_area)  # Clear message area with black
+        if self.messages:  # Only draw if there are messages
+            text = font.render(self.messages[-1], True, pygame.Color('white'))
+            screen.blit(text, (10, 530))
+
+
     def getSquare(self):
         mouse_pos = pygame.mouse.get_pos()
         x, y = [int(v // 65) for v in mouse_pos]
@@ -39,7 +49,7 @@ class Game:
 
     def launch(self):
         pygame.init()
-        screen = pygame.display.set_mode((520, 600))
+        screen = pygame.display.set_mode((520, 650))
         clock = pygame.time.Clock()
         running = True
         selected_piece = "."
@@ -49,6 +59,7 @@ class Game:
         valid_moves = []
         king_check = False
         king_pos = None
+        game_over = False
 
         while running:
             for event in pygame.event.get():
@@ -62,37 +73,37 @@ class Game:
                             selected_piece = self.board.getFigure(y, x)
                             if selected_piece != "." and selected_piece.color == self.current_turn:
                                 if king_check and selected_piece.shape.lower() != "ki":
-                                    print("Only the king can be moved when in check")
+                                    self.messages.append("Only the king can be moved when in check")
                                 else:
-                                    print(f"Selected piece at ({x}, {y}): {selected_piece}")
+                                    self.messages.append(f"Selected piece at ({x}, {y}): {selected_piece}")
                                     selected = True
-                                    valid_moves = selected_piece.validMoves(self.board.board)
+                                    valid_moves = selected_piece.validMoves(self.board.board, 1)
 
                             else:
-                                print("Not a valid piece or not your turn")
+                                self.messages.append("Not a valid piece or not your turn")
                                 selected_piece = None
                         else:
-                            print("Not part of the board")
+                            self.messages.append("Not part of the board")
                     else:
                         x, y = self.getSquare()
                         if 0 <= x < 8 and 0 <= y < 8:
                             if (x, y) == (selected_piece.x, selected_piece.y):
-                                print("Unselected")
+                                self.messages.append("Unselected")
                                 selected = False
                                 valid_moves = []
                             else:
                                 did_move = selected_piece.move(x, y, self.board.board)
                                 if did_move:
                                     self.current_turn = "black" if self.current_turn == "white" else "white"
-                                    print(f"Moved {selected_piece} to ({x}, {y})")
+                                    self.messages.append(f"Moved {selected_piece} to ({x}, {y})")
                                     selected = False
                                     valid_moves = []
                                     king_check = self.board.isKingInCheck(self.current_turn)
                                     king_pos = self.board.getKingPosition(self.current_turn) if king_check else None
                                 else:
-                                    print(f"Invalid move for {selected_piece} to ({x}, {y})")
+                                    self.messages.append(f"Invalid move for {selected_piece} to ({x}, {y})")
                         else:
-                            print("Not part of the board")
+                            self.messages.append("Not part of the board")
 
 
             self.drawBoard(screen)
@@ -110,8 +121,8 @@ class Game:
                     pygame.draw.rect(screen, pygame.Color(0, 255, 0),
                     pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
             self.drawPieces(self.board.board, screen)
+            self.drawMessages(screen)
             pygame.display.flip()
 
             clock.tick(60)
-
-# king when checked then his square is red and has to move, also red square endagered position
+        pygame.quit()

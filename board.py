@@ -29,7 +29,7 @@ class Board:
         for row in self.board:
             for piece in row:
                 if piece != "." and piece.color != color:
-                    if (king_x, king_y) in piece.validMoves(self.board):
+                    if (king_x, king_y) in piece.validMoves(self.board, 1):
                         return True
         return False
 

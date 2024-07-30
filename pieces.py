@@ -23,11 +23,11 @@ class Piece:
             return board[y][x] == "."
         return False
 
-    def validMoves(self, board):
+    def validMoves(self, board, move_or_king): # move_or_king 1 - for piece movement, 0 - for checking kings possible moves
         pass
 
     def move(self, new_x, new_y, board):
-        if (new_x, new_y) in self.validMoves(board):
+        if (new_x, new_y) in self.validMoves(board, 1):
             board[self.y][self.x] = "."
             self.x = new_x
             self.y = new_y
@@ -47,7 +47,7 @@ class Pawn(Piece):
         else:
             self.shape = "p"
 
-    def validMoves(self, board):
+    def validMoves(self, board, move_or_king):
         direction = -1 if self.color == "white" else 1 # 1 - up, -1 down
         valid_moves = []
         curr_x = self.x
@@ -78,7 +78,7 @@ class Pawn(Piece):
         return valid_moves
 
     def move(self, new_x, new_y, board):
-        if (new_x, new_y) in self.validMoves(board):
+        if (new_x, new_y) in self.validMoves(board, 1):
             board[self.y][self.x] = "."
             self.x = new_x
             self.y = new_y
@@ -102,7 +102,7 @@ class Rook(Piece):
         else:
             self.shape = "r"
 
-    def validMoves(self, board):
+    def validMoves(self, board, move_or_king):
         valid_moves = []
         directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         curr_x = self.x
@@ -122,6 +122,8 @@ class Rook(Piece):
                     valid_moves.append((new_x, new_y))
                     break
                 else:
+                    if not move_or_king:
+                        valid_moves.append((new_x, new_y))
                     break
         return valid_moves
 
@@ -134,29 +136,7 @@ class Rook(Piece):
         if not (dx <= 2 or dy <= 2):
             return moves
 
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        curr_x = self.x
-        curr_y = self.y
-
-        for direction in directions:
-            d_x, d_y = direction
-            new_x = curr_x + d_x
-            new_y = curr_y + d_y
-
-            while 0 <= new_x < 8 and 0 <= new_y < 8:
-                if self.isSquareEmpty(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
-                elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    break
-                else:
-                    moves.append((new_x, new_y))
-                    break
-
-
-
+        moves = self.validMoves(board, 0)
 
         if self.x == king_x:
             if self.y < king_y:
@@ -178,7 +158,7 @@ class Knight(Piece):
         else:
             self.shape = "kn"
 
-    def validMoves(self, board):
+    def validMoves(self, board, move_or_king):
         valid_moves = []
         directions = [(-1, -2), (-1, 2), (1, -2), (1, 2), (-2, -1), (-2, 1), (2, -1), (2, 1)]
         curr_x = self.x
@@ -190,24 +170,16 @@ class Knight(Piece):
             new_y = curr_y + d_y
 
             if 0 <= new_x < 8 and 0 <= new_y < 8:
-                if self.isSquareEmpty(new_x, new_y, board) or self.isSquareEnemyPiece(new_x, new_y, board):
+                if move_or_king:
+                    if self.isSquareEmpty(new_x, new_y, board) or self.isSquareEnemyPiece(new_x, new_y, board):
+                        valid_moves.append((new_x, new_y))
+                else:
                     valid_moves.append((new_x, new_y))
 
         return valid_moves
 
     def threatensKing(self, king_x, king_y, board):
-        moves = []
-        directions = [(-1, -2), (-1, 2), (1, -2), (1, 2), (-2, -1), (-2, 1), (2, -1), (2, 1)]
-        curr_x = self.x
-        curr_y = self.y
-
-        for direction in directions:
-            d_x, d_y = direction
-            new_x = curr_x + d_x
-            new_y = curr_y + d_y
-
-            if 0 <= new_x < 8 and 0 <= new_y < 8:
-                moves.append((new_x, new_y))
+        moves = self.validMoves(board, 0)
         return moves
 
 class Bishop(Piece):
@@ -218,7 +190,7 @@ class Bishop(Piece):
         else:
             self.shape = "b"
 
-    def validMoves(self, board):
+    def validMoves(self, board, move_or_king):
         valid_moves = []
         directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
         curr_x = self.x
@@ -238,6 +210,8 @@ class Bishop(Piece):
                     valid_moves.append((new_x, new_y))
                     break
                 else:
+                    if not move_or_king:
+                        valid_moves.append((new_x, new_y))
                     break
         return valid_moves
 
@@ -250,29 +224,7 @@ class Bishop(Piece):
         if not (dx - dy <= 2):
             return moves
 
-
-
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        curr_x = self.x
-        curr_y = self.y
-
-        for direction in directions:
-            d_x, d_y = direction
-            new_x = curr_x + d_x
-            new_y = curr_y + d_y
-
-            while 0 <= new_x < 8 and 0 <= new_y < 8:
-                if self.isSquareEmpty(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
-                elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    break
-                else:
-                    moves.append((new_x, new_y))
-                    break
-
+        moves = self.validMoves(board, 0)
 
         if dx == dy:
             d_x = 1 if self.x < king_x else -1
@@ -291,7 +243,7 @@ class Queen(Piece):
         else:
             self.shape = "q"
 
-    def validMoves(self, board):
+    def validMoves(self, board, move_or_king):
         valid_moves = []
         curr_x = self.x
         curr_y = self.y
@@ -310,6 +262,8 @@ class Queen(Piece):
                     valid_moves.append((new_x, new_y))
                     break
                 else:
+                    if not move_or_king:
+                        valid_moves.append((new_x, new_y))
                     break
 
         directions_diagonal = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
@@ -328,6 +282,8 @@ class Queen(Piece):
                     valid_moves.append((new_x, new_y))
                     break
                 else:
+                    if not move_or_king:
+                        valid_moves.append((new_x, new_y))
                     break
 
         return valid_moves
@@ -341,28 +297,14 @@ class Queen(Piece):
         if not ((dx <= 2 or dy <= 2) or dx - dy <= 2):
             return moves
 
+        moves = self.validMoves(board, 0)
 
-        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        curr_x = self.x
-        curr_y = self.y
-
-        for direction in directions:
-            d_x, d_y = direction
-            new_x = curr_x + d_x
-            new_y = curr_y + d_y
-
-            while 0 <= new_x < 8 and 0 <= new_y < 8:
-                if self.isSquareEmpty(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
-                elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    break
-                else:
-                    moves.append((new_x, new_y))
-                    break
-
+        if dx == dy:
+            d_x = 1 if self.x < king_x else -1
+            d_y = 1 if self.y < king_y else -1
+            next_x = king_x + d_x
+            next_y = king_y + d_y
+            moves.append((next_x, next_y))
 
         if self.x == king_x:
             if self.y < king_y:
@@ -374,47 +316,6 @@ class Queen(Piece):
                 moves.append((king_x + 1, king_y))
             else:
                 moves.append((king_x - 1, king_y))
-
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
-        curr_x = self.x
-        curr_y = self.y
-
-        for direction in directions:
-            d_x, d_y = direction
-            new_x = curr_x + d_x
-            new_y = curr_y + d_y
-
-            while 0 <= new_x < 8 and 0 <= new_y < 8:
-                if self.isSquareEmpty(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
-                elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    moves.append((new_x, new_y))
-                    break
-                else:
-                    moves.append((new_x, new_y))
-                    break
-
-        if dx == dy:
-            d_x = 1 if self.x < king_x else -1
-            d_y = 1 if self.y < king_y else -1
-            next_x = king_x + d_x
-            next_y = king_y + d_y
-            moves.append((next_x, next_y))
-
-
-
-        if dx == dy:  # Bishop and king on the same diagonal
-            # Determine the direction from the bishop to the king
-            d_x = 1 if self.x < king_x else -1
-            d_y = 1 if self.y < king_y else -1
-
-            # Calculate the next position beyond the king
-            next_x = king_x + d_x
-            next_y = king_y + d_y
-
-            moves.append((next_x, next_y))
 
         return moves
 
@@ -439,47 +340,14 @@ class King(Piece):
                             enemy_moves.add(move)
         return enemy_moves
 
-    def isCheck(self, board):
-        curr_x = self.x
-        curr_y = self.y
-        for row in board:
-            for piece in row:
-                if piece != "." and piece.color != self.color:
-                    if (curr_x, curr_y) in piece.validMoves(board):
-                        return True
-        return False
-
-    def causesCheck(self, new_x, new_y, board):
-        curr_x = self.x
-        curr_y = self.y
-        curr_piece = board[new_y][new_x]
-        board[new_y][new_x] = self
-        board[curr_y][curr_x] = "."
-        self.x = new_x
-        self.y = new_y
-        is_check = self.isCheck(board)
-        self.x = curr_x
-        self.y = curr_y
-        board[new_y][new_x] = curr_piece
-        board[curr_y][curr_x] = self
-        return is_check
-
-    def move_does_not_cause_check(self, move, board):
-        new_x, new_y = move
-        return not self.causesCheck(new_x, new_y, board)
-
     def threatensKing(self, king_x, king_y, board):
         moves = []
-
         dx = abs(self.x - king_x)
         dy = abs(self.y - king_y)
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
         if not (dx <= 2 and dy <= 2):
             return moves
-
-        directions = [(-1, -1), (-1, 0), (-1, 1),
-                      (0, -1),          (0, 1),
-                      (1, -1), (1, 0), (1, 1)]
 
         for d_x, d_y in directions:
             new_x, new_y = self.x + d_x, self.y + d_y
@@ -488,7 +356,7 @@ class King(Piece):
 
         return moves
 
-    def validMoves(self, board):
+    def validMoves(self, board, move_or_king):
         valid_moves = []
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
         curr_x = self.x
@@ -498,28 +366,11 @@ class King(Piece):
             new_x = curr_x + d_x
             new_y = curr_y + d_y
             if 0 <= new_x < 8 and 0 <= new_y < 8:
-                if (new_x, new_y) not in invalid_moves and (self.isSquareEnemyPiece(new_x, new_y, board) or self.isSquareEmpty(new_x, new_y, board)):
+                if (new_x, new_y) not in invalid_moves and (
+                        self.isSquareEnemyPiece(new_x, new_y, board) or self.isSquareEmpty(new_x, new_y, board)):
                     valid_moves.append((new_x, new_y))
-
-
-
-        # for row in board:
-        #     for piece in row:
-        #         if piece != "." and piece.shape.lower() == "ki" and piece.color != self.color:
-        #             enemy_king = (piece.x, piece.y)
-        #             valid_moves = [move for move in valid_moves if abs(move[0] - enemy_king[0]) >= 2 or abs(move[1] - enemy_king[1]) >= 2]
-
-        # filtered_moves = []
-        # for move in valid_moves:
-        #     if not self.causesCheck(move[0], move[1], board):
-        #         filtered_moves.append(move)
-        #
-        # valid_moves = filtered_moves
-
-
 
         return valid_moves
 
 # when check other figure may uncheck
 # also add upgrade of the figure
-# roshade
