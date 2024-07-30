@@ -1,5 +1,4 @@
-import sys
-sys.setrecursionlimit(900000000)
+import multiprocessing
 
 class Piece:
     def __init__(self, x, y, color):
@@ -35,6 +34,9 @@ class Piece:
             board[self.y][self.x] = self
             return True
         return False
+
+    def threatensKing(self, king_x, king_y, board):
+        pass
 
 class Pawn(Piece):
     def __init__(self, x, y, color):
@@ -85,6 +87,13 @@ class Pawn(Piece):
             return True
         return False
 
+    def threatensKing(self, king_x, king_y, board):
+        if self.color == "white":
+            moves = [(self.x + 1, self.y - 1), (self.x - 1, self.y - 1)]
+        else:
+            moves = [(self.x + 1, self.y + 1), (self.x - 1, self.y + 1)]
+        return moves
+
 class Rook(Piece):
     def __init__(self, x, y, color):
         super().__init__(x, y, color)
@@ -116,6 +125,51 @@ class Rook(Piece):
                     break
         return valid_moves
 
+    def threatensKing(self, king_x, king_y, board):
+        moves = []
+
+        dx = abs(self.x - king_x)
+        dy = abs(self.y - king_y)
+
+        if not (dx <= 2 or dy <= 2):
+            return moves
+
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        curr_x = self.x
+        curr_y = self.y
+
+        for direction in directions:
+            d_x, d_y = direction
+            new_x = curr_x + d_x
+            new_y = curr_y + d_y
+
+            while 0 <= new_x < 8 and 0 <= new_y < 8:
+                if self.isSquareEmpty(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    new_x = new_x + d_x
+                    new_y = new_y + d_y
+                elif self.isSquareEnemyPiece(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    break
+                else:
+                    moves.append((new_x, new_y))
+                    break
+
+
+
+
+        if self.x == king_x:
+            if self.y < king_y:
+                moves.append((king_x, king_y + 1))
+            else:
+                moves.append((king_x, king_y - 1))
+        elif self.y == king_y:
+            if self.x < king_x:
+                moves.append((king_x + 1, king_y))
+            else:
+                moves.append((king_x - 1, king_y))
+        return moves
+
 class Knight(Piece):
     def __init__(self, x, y, color):
         super().__init__(x, y, color)
@@ -140,6 +194,21 @@ class Knight(Piece):
                     valid_moves.append((new_x, new_y))
 
         return valid_moves
+
+    def threatensKing(self, king_x, king_y, board):
+        moves = []
+        directions = [(-1, -2), (-1, 2), (1, -2), (1, 2), (-2, -1), (-2, 1), (2, -1), (2, 1)]
+        curr_x = self.x
+        curr_y = self.y
+
+        for direction in directions:
+            d_x, d_y = direction
+            new_x = curr_x + d_x
+            new_y = curr_y + d_y
+
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                moves.append((new_x, new_y))
+        return moves
 
 class Bishop(Piece):
     def __init__(self, x, y, color):
@@ -171,6 +240,48 @@ class Bishop(Piece):
                 else:
                     break
         return valid_moves
+
+    def threatensKing(self, king_x, king_y, board):
+        moves = []
+
+        dx = abs(self.x - king_x)
+        dy = abs(self.y - king_y)
+
+        if not (dx - dy <= 2):
+            return moves
+
+
+
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        curr_x = self.x
+        curr_y = self.y
+
+        for direction in directions:
+            d_x, d_y = direction
+            new_x = curr_x + d_x
+            new_y = curr_y + d_y
+
+            while 0 <= new_x < 8 and 0 <= new_y < 8:
+                if self.isSquareEmpty(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    new_x = new_x + d_x
+                    new_y = new_y + d_y
+                elif self.isSquareEnemyPiece(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    break
+                else:
+                    moves.append((new_x, new_y))
+                    break
+
+
+        if dx == dy:
+            d_x = 1 if self.x < king_x else -1
+            d_y = 1 if self.y < king_y else -1
+            next_x = king_x + d_x
+            next_y = king_y + d_y
+            moves.append((next_x, next_y))
+
+        return moves
 
 class Queen(Piece):
     def __init__(self, x, y, color):
@@ -221,6 +332,92 @@ class Queen(Piece):
 
         return valid_moves
 
+    def threatensKing(self, king_x, king_y, board):
+        moves = []
+
+        dx = abs(self.x - king_x)
+        dy = abs(self.y - king_y)
+
+        if not ((dx <= 2 or dy <= 2) or dx - dy <= 2):
+            return moves
+
+
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        curr_x = self.x
+        curr_y = self.y
+
+        for direction in directions:
+            d_x, d_y = direction
+            new_x = curr_x + d_x
+            new_y = curr_y + d_y
+
+            while 0 <= new_x < 8 and 0 <= new_y < 8:
+                if self.isSquareEmpty(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    new_x = new_x + d_x
+                    new_y = new_y + d_y
+                elif self.isSquareEnemyPiece(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    break
+                else:
+                    moves.append((new_x, new_y))
+                    break
+
+
+        if self.x == king_x:
+            if self.y < king_y:
+                moves.append((king_x, king_y + 1))
+            else:
+                moves.append((king_x, king_y - 1))
+        elif self.y == king_y:
+            if self.x < king_x:
+                moves.append((king_x + 1, king_y))
+            else:
+                moves.append((king_x - 1, king_y))
+
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
+        curr_x = self.x
+        curr_y = self.y
+
+        for direction in directions:
+            d_x, d_y = direction
+            new_x = curr_x + d_x
+            new_y = curr_y + d_y
+
+            while 0 <= new_x < 8 and 0 <= new_y < 8:
+                if self.isSquareEmpty(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    new_x = new_x + d_x
+                    new_y = new_y + d_y
+                elif self.isSquareEnemyPiece(new_x, new_y, board):
+                    moves.append((new_x, new_y))
+                    break
+                else:
+                    moves.append((new_x, new_y))
+                    break
+
+        if dx == dy:
+            d_x = 1 if self.x < king_x else -1
+            d_y = 1 if self.y < king_y else -1
+            next_x = king_x + d_x
+            next_y = king_y + d_y
+            moves.append((next_x, next_y))
+
+
+
+        if dx == dy:  # Bishop and king on the same diagonal
+            # Determine the direction from the bishop to the king
+            d_x = 1 if self.x < king_x else -1
+            d_y = 1 if self.y < king_y else -1
+
+            # Calculate the next position beyond the king
+            next_x = king_x + d_x
+            next_y = king_y + d_y
+
+            moves.append((next_x, next_y))
+
+        return moves
+
 class King(Piece):
     def __init__(self, x, y, color):
         super().__init__(x, y, color)
@@ -231,41 +428,15 @@ class King(Piece):
 
     def getAllEnemyMoves(self, board):
         enemy_moves = set()
+
         for row in board:
             for piece in row:
-                if piece != "." and piece.color != self.color:#new thing when diagonally checked then still can move back to checked square
-
-                    if (piece.shape == "p" or piece.shape == "P") and abs(piece.x - self.x) <= 4 or abs(piece.y - self.y) <= 3:
-                        direction = -1 if piece.color == "white" else 1
-                        curr_x = piece.x
-                        curr_y = piece.y + direction
-                        new_x_left = curr_x - 1
-                        new_x_right = curr_x + 1
-                        if 0 <= new_x_left < 8 and 0 <= curr_y < 8:
-                            enemy_moves.add((new_x_left, curr_y))
-                        if 0 <= new_x_right < 8 and 0 <= curr_y < 8:
-                            enemy_moves.add((new_x_right, curr_y))
-
-                    if (piece.shape == "r" or piece.shape == "R") and ((piece.x == self.x or piece.y == self.y) or (abs(piece.x - self.x) == 1 or abs(piece.y - self.y) == 1)):
-                        for move in piece.validMoves(board):
+                if piece != "." and piece.color != self.color:
+                    threatened_positions = piece.threatensKing(self.x, self.y, board)
+                    for move in threatened_positions:
+                        move_x, move_y = move
+                        if 0 <= move_x <= 7 and 0 <= move_y <= 7:
                             enemy_moves.add(move)
-
-                    if (piece.shape == "q" or piece.shape == "Q") and ((piece.x == self.x or piece.y == self.y) or (abs(piece.x - self.x) == 1 or abs(piece.y - self.y) == 1)):
-                        for move in piece.validMoves(board):
-                            enemy_moves.add(move)
-
-                    if (piece.shape == "b" or piece.shape == "B") and (abs(piece.x - self.x) == abs(piece.y - self.y) or (abs(piece.x - self.x - 1) == abs(piece.y - self.y)) or (abs(piece.x - self.x) == abs(piece.y - self.y - 1))):
-                        for move in piece.validMoves(board):
-                            enemy_moves.add(move)
-
-                    if (piece.shape == "q" or piece.shape == "Q") and (abs(piece.x - self.x) == abs(piece.y - self.y) or (abs(piece.x - self.x - 1) == abs(piece.y - self.y)) or (abs(piece.x - self.x) == abs(piece.y - self.y - 1))):
-                        for move in piece.validMoves(board):
-                            enemy_moves.add(move)
-
-                    if (piece.shape == "kn" or piece.shape == "Kn") and abs(piece.x - self.x) <= 3 and abs(piece.y - self.y) <= 3:
-                        for move in piece.validMoves(board):
-                            enemy_moves.add(move)
-
         return enemy_moves
 
     def isCheck(self, board):
@@ -293,6 +464,30 @@ class King(Piece):
         board[curr_y][curr_x] = self
         return is_check
 
+    def move_does_not_cause_check(self, move, board):
+        new_x, new_y = move
+        return not self.causesCheck(new_x, new_y, board)
+
+    def threatensKing(self, king_x, king_y, board):
+        moves = []
+
+        dx = abs(self.x - king_x)
+        dy = abs(self.y - king_y)
+
+        if not (dx <= 2 and dy <= 2):
+            return moves
+
+        directions = [(-1, -1), (-1, 0), (-1, 1),
+                      (0, -1),          (0, 1),
+                      (1, -1), (1, 0), (1, 1)]
+
+        for d_x, d_y in directions:
+            new_x, new_y = self.x + d_x, self.y + d_y
+            if 0 <= new_x < 8 and 0 <= new_y < 8:
+                moves.append((new_x, new_y))
+
+        return moves
+
     def validMoves(self, board):
         valid_moves = []
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
@@ -302,18 +497,29 @@ class King(Piece):
         for d_x, d_y in directions:
             new_x = curr_x + d_x
             new_y = curr_y + d_y
-
             if 0 <= new_x < 8 and 0 <= new_y < 8:
-                if (self.isSquareEmpty(new_x, new_y, board) or self.isSquareEnemyPiece(new_x, new_y, board)) and (new_x, new_y) not in invalid_moves:
-                    if self.isSquareEnemyPiece(new_x, new_y, board):
-                        if not self.causesCheck(new_x, new_y, board):
-                            valid_moves.append((new_x, new_y))
-                    else:
-                        valid_moves.append((new_x, new_y))
+                if (new_x, new_y) not in invalid_moves and (self.isSquareEnemyPiece(new_x, new_y, board) or self.isSquareEmpty(new_x, new_y, board)):
+                    valid_moves.append((new_x, new_y))
 
-        for row in board:
-            for piece in row:
-                if piece != "." and piece.shape.lower() == "ki" and piece.color != self.color:
-                    enemy_king = (piece.x, piece.y)
-                    valid_moves = [move for move in valid_moves if abs(move[0] - enemy_king[0]) >= 2 or abs(move[1] - enemy_king[1]) >= 2]
+
+
+        # for row in board:
+        #     for piece in row:
+        #         if piece != "." and piece.shape.lower() == "ki" and piece.color != self.color:
+        #             enemy_king = (piece.x, piece.y)
+        #             valid_moves = [move for move in valid_moves if abs(move[0] - enemy_king[0]) >= 2 or abs(move[1] - enemy_king[1]) >= 2]
+
+        # filtered_moves = []
+        # for move in valid_moves:
+        #     if not self.causesCheck(move[0], move[1], board):
+        #         filtered_moves.append(move)
+        #
+        # valid_moves = filtered_moves
+
+
+
         return valid_moves
+
+# when check other figure may uncheck
+# also add upgrade of the figure
+# roshade
