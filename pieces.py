@@ -1,5 +1,8 @@
 import multiprocessing
 
+import board
+
+
 class Piece:
     def __init__(self, x, y, color):
         self.x = x
@@ -339,6 +342,14 @@ class King(Piece):
                         if 0 <= move_x <= 7 and 0 <= move_y <= 7:
                             enemy_moves.add(move)
         return enemy_moves
+
+    def getAllAllyMoves(self, board):
+        ally_moves = dict()
+        for row in board:
+            for piece in row:
+                if piece != "." and piece.color == self.color:
+                    ally_moves[piece] = piece.validMoves(board, 1)
+        return ally_moves
 
     def threatensKing(self, king_x, king_y, board):
         moves = []
