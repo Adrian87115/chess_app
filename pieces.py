@@ -1,7 +1,4 @@
-import multiprocessing
-
 import board
-
 
 class Piece:
     def __init__(self, x, y, color):
@@ -383,5 +380,5 @@ class King(Piece):
 
         return valid_moves
 
-# when check other figure may uncheck
+# bug: can move a figure what will cause check
 # also add upgrade of the figure

@@ -5,3 +5,7 @@ https://www.flaticon.com/free-icon/king_5093942?term=king&page=2&position=39&ori
 https://www.flaticon.com/free-icon/bishop_3854479?term=bishop&page=1&position=70&origin=search&related_id=3854479
 https://www.flaticon.com/free-icon/queen_5916313?term=queen&page=6&position=40&origin=search&related_id=5916313
 https://rgbcolorcode.com/
+
+<a href="https://www.flaticon.com/free-icons/back" title="back icons">Back icons created by Freepik - Flaticon</a>
+
+<a href="https://www.flaticon.com/free-icons/reset" title="reset icons">Reset icons created by Freepik - Flaticon</a>

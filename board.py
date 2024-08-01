@@ -49,29 +49,23 @@ class Board:
         king_x, king_y = king_position
         king = self.board[king_y][king_x]
 
-        # Find all moves for the player's pieces
         ally_moves = king.getAllAllyMoves(self.board)
         valid_moves = []
 
-        # Check each move to see if it resolves the check
         for piece, moves in ally_moves.items():
             original_x, original_y = piece.x, piece.y
             for move in moves:
                 target_x, target_y = move
 
-                # Save the original state of the target square
                 target_piece = self.board[target_y][target_x]
 
-                # Make the move temporarily
                 self.board[target_y][target_x] = piece
                 self.board[original_y][original_x] = "."
                 piece.x, piece.y = target_x, target_y
 
-                # Check if the move resolves the check
                 if not self.isKingInCheck(color):
                     valid_moves.append((piece, move))
 
-                # Revert the move
                 piece.x, piece.y = original_x, original_y
                 self.board[original_y][original_x] = piece
                 self.board[target_y][target_x] = target_piece

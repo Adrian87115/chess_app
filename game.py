@@ -1,5 +1,6 @@
 import board as b
 import pieces as p
+import app as a
 import pygame
 
 class Game:
@@ -52,25 +53,60 @@ class Game:
     def resetGame(self):
         self.board = b.Board()
         self.current_turn = "white"
+        self.messages = []
 
-    def launch(self):
-        pygame.init()
-        screen = pygame.display.set_mode((520, 650))
-        clock = pygame.time.Clock()
+    def displayPanel(self, screen):
+        # Define panel dimensions and color
+        panel = pygame.Rect(520, 0, 50, 600)
+        pygame.draw.rect(screen, (0, 0, 0), panel)
+
+        # Load images for button states
+        back_image = pygame.image.load("images/back_white.png")
+        back_image_hover = pygame.image.load("images/back_grey.png")
+        button_size = 48
+        button_rect_back = pygame.Rect(521, 0, button_size, button_size)
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = pygame.mouse.get_pressed()
+        if button_rect_back.collidepoint(mouse_pos):
+            current_image = back_image_hover
+            if mouse_click[0]:
+                a.App().titleScreen()
+                self.resetGame()
+                return True
+        else:
+            current_image = back_image
+        current_image = pygame.transform.scale(current_image, (button_size, button_size))
+        screen.blit(current_image, button_rect_back.topleft)
+
+        reset_image = pygame.image.load("images/reset_white.png")
+        reset_image_hover = pygame.image.load("images/reset_grey.png")
+        button_rect_reset = pygame.Rect(521, 50, button_size, button_size)
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_click = pygame.mouse.get_pressed()
+        if button_rect_reset.collidepoint(mouse_pos):
+            current_image = reset_image_hover
+            if mouse_click[0]:
+                self.resetGame()
+                a.App().startGame()
+                self.messages.append("Game reseted")
+                return
+        else:
+            current_image = reset_image
+        current_image = pygame.transform.scale(current_image, (button_size, button_size))
+        screen.blit(current_image, button_rect_reset.topleft)
+
+    def humanVsHuman(self, screen, clock):
         running = True
         selected_piece = "."
-        color = {1: "white",
-                 0: "black"}
         selected = False
         valid_moves = []
         king_check = False
         king_pos = None
-        game_over = False
 
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
+                    pygame.quit()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     x, y = self.getSquare()
@@ -80,10 +116,8 @@ class Game:
                             if selected_piece != "." and selected_piece.color == self.current_turn:
                                 king_check = self.board.isKingInCheck(self.current_turn)
                                 if king_check:
-                                    # Check for checkmate
                                     if self.board.isCheckmate(self.current_turn):
-                                        self.messages.append(f"Checkmate! {self.current_turn} loses.")
-                                        game_over = True
+                                        self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
                                     else:
                                         check_resolving_moves = self.board.validMovesWhenCheck(self.current_turn)
                                         pieces_that_can_move = {move[0] for move in check_resolving_moves}
@@ -118,18 +152,13 @@ class Game:
                                         valid_moves = []
                                         king_check = self.board.isKingInCheck(self.current_turn)
 
-                                        # Check for checkmate or stalemate
                                         if king_check and self.board.isCheckmate(self.current_turn):
                                             self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
-                                            game_over = True
                                         elif not king_check and self.board.isStalemate(self.current_turn):
                                             self.messages.append("Stalemate! The game is a draw.")
-                                            game_over = True
 
-                                        # Check for insufficient material
                                         if self.board.isInsufficientMaterial():
                                             self.messages.append("Draw due to insufficient material.")
-                                            game_over = True
 
                                         king_pos = self.board.getKingPosition(self.current_turn) if king_check else None
                                     else:
@@ -138,24 +167,30 @@ class Game:
                                     self.messages.append("Move not allowed")
                     else:
                         self.messages.append("Not part of the board")
-
+            self.displayPanel(screen, clock)
             self.drawBoard(screen)
+
             if king_check and king_pos:
                 pygame.draw.rect(screen, pygame.Color(255, 0, 0),
                                  pygame.Rect(king_pos[0] * 65, king_pos[1] * 65, 65, 65), 3)
             if selected:
                 pygame.draw.rect(screen, pygame.Color(0, 0, 150),
-                    pygame.Rect(selected_piece.x * 65, selected_piece.y * 65, 65, 65), 3)
+                                 pygame.Rect(selected_piece.x * 65, selected_piece.y * 65, 65, 65), 3)
             for move in valid_moves:
                 if selected_piece.isSquareEnemyPiece(move[0], move[1], self.board.board):
                     pygame.draw.rect(screen, pygame.Color(255, 101, 0),
                                      pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
                 else:
                     pygame.draw.rect(screen, pygame.Color(0, 255, 0),
-                    pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
+                                     pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
             self.drawPieces(self.board.board, screen)
             self.drawMessages(screen)
             pygame.display.flip()
 
             clock.tick(60)
-        pygame.quit()
+
+    def humanVsComputer(self, screen, clock, player_color):
+        pass
+
+    def computerVsComputer(self, screen, clock):
+        pass
