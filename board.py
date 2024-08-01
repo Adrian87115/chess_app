@@ -33,13 +33,16 @@ class Board:
                         return True
         return False
 
-    def getKingPosition(self, color):
+    def getKing(self, color):
         for y in range(8):
             for x in range(8):
                 piece = self.board[y][x]
                 if isinstance(piece, p.King) and piece.color == color:
-                    return (x, y)
-        return None
+                    return piece
+
+    def getKingPosition(self, color):
+        king = self.getKing(color)
+        return king.x, king.y
 
     def validMovesWhenCheck(self, color):
         king_position = self.getKingPosition(color)

@@ -48,7 +48,7 @@ class Pawn(Piece):
             self.shape = "p"
 
     def validMoves(self, board, move_or_king):
-        direction = -1 if self.color == "white" else 1 # 1 - up, -1 down
+        direction = -1 if self.color == "white" else 1  # 1 - up, -1 down
         valid_moves = []
         curr_x = self.x
         curr_y = self.y
@@ -58,23 +58,30 @@ class Pawn(Piece):
             new_y = curr_y + 2 * direction
             # ahead 2
             if self.isSquareEmpty(new_x, new_y, board) and self.isSquareEmpty(new_x, curr_y + direction, board):
-                valid_moves.append((new_x, new_y))
+                if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                    valid_moves.append((new_x, new_y))
 
         new_x = curr_x
         new_y = curr_y + direction
         # ahead 1
         if self.isSquareEmpty(new_x, new_y, board):
-            valid_moves.append((new_x, new_y))
+            if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                valid_moves.append((new_x, new_y))
 
         # capture left
         new_x = curr_x - 1
+        new_y = curr_y + direction
         if self.isSquareEnemyPiece(new_x, new_y, board):
-            valid_moves.append((new_x, new_y))
+            if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                valid_moves.append((new_x, new_y))
 
         # capture right
         new_x = curr_x + 1
+        new_y = curr_y + direction
         if self.isSquareEnemyPiece(new_x, new_y, board):
-            valid_moves.append((new_x, new_y))
+            if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                valid_moves.append((new_x, new_y))
+
         return valid_moves
 
     def move(self, new_x, new_y, board):
@@ -115,16 +122,19 @@ class Rook(Piece):
 
             while 0 <= new_x < 8 and 0 <= new_y < 8:
                 if self.isSquareEmpty(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
+                    if not move_or_king or not simulateMoveAndCheck(self, (new_x, new_y), board):
+                        valid_moves.append((new_x, new_y))
+                    new_x += d_x
+                    new_y += d_y
                 elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
+                    if not move_or_king or not simulateMoveAndCheck(self, (new_x, new_y), board):
+                        valid_moves.append((new_x, new_y))
                     break
                 else:
                     if not move_or_king:
                         valid_moves.append((new_x, new_y))
                     break
+
         return valid_moves
 
     def threatensKing(self, king_x, king_y, board):
@@ -172,7 +182,8 @@ class Knight(Piece):
             if 0 <= new_x < 8 and 0 <= new_y < 8:
                 if move_or_king:
                     if self.isSquareEmpty(new_x, new_y, board) or self.isSquareEnemyPiece(new_x, new_y, board):
-                        valid_moves.append((new_x, new_y))
+                        if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                            valid_moves.append((new_x, new_y))
                 else:
                     valid_moves.append((new_x, new_y))
 
@@ -203,15 +214,21 @@ class Bishop(Piece):
 
             while 0 <= new_x < 8 and 0 <= new_y < 8:
                 if self.isSquareEmpty(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
+                    if move_or_king:
+                        if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                            valid_moves.append((new_x, new_y))
+                    else:
+                        valid_moves.append((new_x, new_y))
+                    new_x += d_x
+                    new_y += d_y
                 elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
+                    if move_or_king:
+                        if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                            valid_moves.append((new_x, new_y))
+                    else:
+                        valid_moves.append((new_x, new_y))
                     break
                 else:
-                    if not move_or_king:
-                        valid_moves.append((new_x, new_y))
                     break
         return valid_moves
 
@@ -248,46 +265,32 @@ class Queen(Piece):
         curr_x = self.x
         curr_y = self.y
         directions_perpendicular = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-        for direction in directions_perpendicular:
-            d_x, d_y = direction
-            new_x = curr_x + d_x
-            new_y = curr_y + d_y
-            while 0 <= new_x < 8 and 0 <= new_y < 8:
-                if self.isSquareEmpty(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
-                elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
-                    break
-                else:
-                    if not move_or_king:
-                        valid_moves.append((new_x, new_y))
-                    break
-
         directions_diagonal = [(-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-        for direction in directions_diagonal:
+        for direction in directions_perpendicular + directions_diagonal:
             d_x, d_y = direction
             new_x = curr_x + d_x
             new_y = curr_y + d_y
 
             while 0 <= new_x < 8 and 0 <= new_y < 8:
                 if self.isSquareEmpty(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
-                    new_x = new_x + d_x
-                    new_y = new_y + d_y
+                    if move_or_king:
+                        if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                            valid_moves.append((new_x, new_y))
+                    else:
+                        valid_moves.append((new_x, new_y))
+                    new_x += d_x
+                    new_y += d_y
                 elif self.isSquareEnemyPiece(new_x, new_y, board):
-                    valid_moves.append((new_x, new_y))
-                    break
-                else:
-                    if not move_or_king:
+                    if move_or_king:
+                        if not simulateMoveAndCheck(self, (new_x, new_y), board):
+                            valid_moves.append((new_x, new_y))
+                    else:
                         valid_moves.append((new_x, new_y))
                     break
-
+                else:
+                    break
         return valid_moves
-
     def threatensKing(self, king_x, king_y, board):
         moves = []
 
@@ -380,5 +383,29 @@ class King(Piece):
 
         return valid_moves
 
-# bug: can move a figure what will cause check
+    def isCheck(self, board):
+        king_x, king_y = self.x, self.y
+        enemy_moves = self.getAllEnemyMoves(board)
+        return (king_x, king_y) in enemy_moves
+
 # also add upgrade of the figure
+
+def simulateMoveAndCheck(piece, move, board):
+    new_board = [row.copy() for row in board]  # Create a copy of the board
+    curr_x, curr_y = piece.getPosition()
+    new_x, new_y = move
+
+    new_board[curr_y][curr_x] = "."
+    new_board[new_y][new_x] = piece
+    piece.x, piece.y = new_x, new_y
+
+    # Check if the king is in check
+    king = next(p for row in new_board for p in row if isinstance(p, King) and p.color == piece.color)
+    result = king.isCheck(new_board)
+
+    # Revert the move
+    piece.x, piece.y = curr_x, curr_y
+    new_board[curr_y][curr_x] = piece
+    new_board[new_y][new_x] = "."
+
+    return result

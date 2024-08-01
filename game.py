@@ -167,7 +167,7 @@ class Game:
                                     self.messages.append("Move not allowed")
                     else:
                         self.messages.append("Not part of the board")
-            self.displayPanel(screen, clock)
+            self.displayPanel(screen)
             self.drawBoard(screen)
 
             if king_check and king_pos:
