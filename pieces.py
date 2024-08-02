@@ -388,24 +388,16 @@ class King(Piece):
         enemy_moves = self.getAllEnemyMoves(board)
         return (king_x, king_y) in enemy_moves
 
-# also add upgrade of the figure
-
 def simulateMoveAndCheck(piece, move, board):
-    new_board = [row.copy() for row in board]  # Create a copy of the board
+    new_board = [row.copy() for row in board]
     curr_x, curr_y = piece.getPosition()
     new_x, new_y = move
-
     new_board[curr_y][curr_x] = "."
     new_board[new_y][new_x] = piece
     piece.x, piece.y = new_x, new_y
-
-    # Check if the king is in check
     king = next(p for row in new_board for p in row if isinstance(p, King) and p.color == piece.color)
     result = king.isCheck(new_board)
-
-    # Revert the move
     piece.x, piece.y = curr_x, curr_y
     new_board[curr_y][curr_x] = piece
     new_board[new_y][new_x] = "."
-
     return result

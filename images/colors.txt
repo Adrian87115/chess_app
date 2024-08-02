@@ -1,1 +1,2 @@
 grey: #A2A2A2
+figure hover: #515151

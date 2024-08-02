@@ -2,6 +2,7 @@ import board as b
 import pieces as p
 import app as a
 import pygame
+import sys
 
 class Game:
     def __init__(self):
@@ -20,6 +21,12 @@ class Game:
                        "Ki": pygame.image.load("images/king_white.png"),
                        "ki": pygame.image.load("images/king_black.png")}
         self.messages = []
+        self.running = True
+        self.selected_piece = "."
+        self.selected = False
+        self.valid_moves = []
+        self.king_check = False
+        self.king_pos = None
 
     def drawBoard(self, screen):
         colors = [pygame.Color(160, 160, 160), pygame.Color(60, 60, 60)]
@@ -34,10 +41,16 @@ class Game:
                 if piece != ".":
                     screen.blit(self.images[piece.shape], (piece.x * 65, piece.y * 65))
 
+    def drawScreenReseted(self, screen):
+        self.drawBoard(screen)
+        self.drawPieces(self.board.board, screen)
+        panel = pygame.Rect(520, 0, 50, 600)
+        pygame.draw.rect(screen, (128, 128, 128), panel)
+
     def drawMessages(self, screen):
         font = pygame.font.SysFont(None, 24)
         message_area = pygame.Rect(0, 520, 520, 80)
-        pygame.draw.rect(screen, pygame.Color(0, 0, 0), message_area)
+        pygame.draw.rect(screen, pygame.Color(128, 128, 128), message_area)
         if self.messages:
             last_message = self.messages[-1]
             text_surface = font.render(last_message, True, pygame.Color('white'))
@@ -54,13 +67,16 @@ class Game:
         self.board = b.Board()
         self.current_turn = "white"
         self.messages = []
+        self.running = True
+        self.selected_piece = "."
+        self.selected = False
+        self.valid_moves = []
+        self.king_check = False
+        self.king_pos = None
 
     def displayPanel(self, screen):
-        # Define panel dimensions and color
         panel = pygame.Rect(520, 0, 50, 600)
-        pygame.draw.rect(screen, (0, 0, 0), panel)
-
-        # Load images for button states
+        pygame.draw.rect(screen, (128, 128, 128), panel)
         back_image = pygame.image.load("images/back_white.png")
         back_image_hover = pygame.image.load("images/back_grey.png")
         button_size = 48
@@ -72,12 +88,11 @@ class Game:
             if mouse_click[0]:
                 a.App().titleScreen()
                 self.resetGame()
-                return True
+                return
         else:
             current_image = back_image
         current_image = pygame.transform.scale(current_image, (button_size, button_size))
         screen.blit(current_image, button_rect_back.topleft)
-
         reset_image = pygame.image.load("images/reset_white.png")
         reset_image_hover = pygame.image.load("images/reset_grey.png")
         button_rect_reset = pygame.Rect(521, 50, button_size, button_size)
@@ -86,8 +101,10 @@ class Game:
         if button_rect_reset.collidepoint(mouse_pos):
             current_image = reset_image_hover
             if mouse_click[0]:
+                pygame.time.wait(200)
                 self.resetGame()
                 a.App().startGame()
+                self.drawScreenReseted(screen)
                 self.messages.append("Game reseted")
                 return
         else:
@@ -95,74 +112,142 @@ class Game:
         current_image = pygame.transform.scale(current_image, (button_size, button_size))
         screen.blit(current_image, button_rect_reset.topleft)
 
-    def humanVsHuman(self, screen, clock):
-        running = True
-        selected_piece = "."
-        selected = False
-        valid_moves = []
-        king_check = False
-        king_pos = None
+    def displayPromotion(self, screen, x, y, color):
+        button_size = 48
+        spacing = 5
+        panel_width = button_size
+        panel_height = 4 * button_size + 3 * spacing
+        panel_x = 521
+        panel_y = 105
+        panel = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
+        button_rects = {}
+        images = {}
+        hover_images = {}
+        for index, piece in enumerate(['rook', 'knight', 'bishop', 'queen']):
+            y_position = panel_y + index * (button_size + spacing)
+            rect = pygame.Rect(panel_x, y_position, button_size, button_size)
+            button_rects[piece] = rect
+            images[piece] = pygame.transform.scale(
+                pygame.image.load(f"images/{piece}_{color}.png"),
+                (button_size, button_size)
+            )
+            hover_images[piece] = pygame.transform.scale(
+                pygame.image.load(f"images/{piece}_hover.png"),
+                (button_size, button_size)
+            )
+        pygame.draw.rect(screen, (128, 128, 128), panel)
+        mouse_pos = pygame.mouse.get_pos()
 
-        while running:
+        for piece, rect in button_rects.items():
+            if rect.collidepoint(mouse_pos):
+                screen.blit(hover_images[piece], rect.topleft)
+            else:
+                screen.blit(images[piece], rect.topleft)
+
+        for event in pygame.event.get():
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    for piece, rect in button_rects.items():
+                        if rect.collidepoint(mouse_pos):
+                            if piece == "rook":
+                                return p.Rook(x, y, color)
+                            elif piece == "knight":
+                                return p.Knight(x, y, color)
+                            elif piece == "bishop":
+                                return p.Bishop(x, y, color)
+                            elif piece == "queen":
+                                return p.Queen(x, y, color)
+
+    def humanVsHuman(self, screen, clock):
+        promoted_msg = False
+        while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-
+                    sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     x, y = self.getSquare()
                     if 0 <= x < 8 and 0 <= y < 8:
-                        if not selected:
-                            selected_piece = self.board.getFigure(y, x)
-                            if selected_piece != "." and selected_piece.color == self.current_turn:
-                                king_check = self.board.isKingInCheck(self.current_turn)
-                                if king_check:
+                        if not self.selected:
+                            self.selected_piece = self.board.getFigure(y, x)
+                            if self.selected_piece != "." and self.selected_piece.color == self.current_turn:
+                                self.king_check = self.board.isKingInCheck(self.current_turn)
+                                if self.king_check:
                                     if self.board.isCheckmate(self.current_turn):
                                         self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
                                     else:
                                         check_resolving_moves = self.board.validMovesWhenCheck(self.current_turn)
                                         pieces_that_can_move = {move[0] for move in check_resolving_moves}
 
-                                        if selected_piece not in pieces_that_can_move:
+                                        if self.selected_piece not in pieces_that_can_move:
                                             self.messages.append("You must move a piece to resolve the check")
                                             selected_piece = None
                                         else:
-                                            self.messages.append(f"Selected piece at ({x}, {y}): {selected_piece}")
-                                            selected = True
-                                            valid_moves = [move[1] for move in check_resolving_moves if
-                                                           move[0] == selected_piece]
+                                            self.messages.append(f"Selected piece {self.selected_piece}")
+                                            self.selected = True
+                                            self.valid_moves = [move[1] for move in check_resolving_moves if move[0] == self.selected_piece]
                                 else:
-                                    self.messages.append(f"Selected piece at ({x}, {y}): {selected_piece}")
-                                    selected = True
-                                    valid_moves = selected_piece.validMoves(self.board.board, 1)
+                                    self.messages.append(f"Selected piece {self.selected_piece}")
+                                    self.selected = True
+                                    self.valid_moves = self.selected_piece.validMoves(self.board.board, 1)
                             else:
                                 self.messages.append("Not a valid piece or not your turn")
-                                selected_piece = None
+                                self.selected_piece = None
                         else:
-                            if (x, y) == (selected_piece.x, selected_piece.y):
+                            if (x, y) == (self.selected_piece.x, self.selected_piece.y):
                                 self.messages.append("Unselected")
-                                selected = False
-                                valid_moves = []
+                                self.selected = False
+                                self.valid_moves = []
                             else:
-                                if (x, y) in valid_moves:
-                                    did_move = selected_piece.move(x, y, self.board.board)
+                                if (x, y) in self.valid_moves:
+                                    did_move = self.selected_piece.move(x, y, self.board.board)
                                     if did_move:
-                                        self.current_turn = "black" if self.current_turn == "white" else "white"
-                                        self.messages.append(f"Moved {selected_piece} to ({x}, {y})")
-                                        selected = False
-                                        valid_moves = []
-                                        king_check = self.board.isKingInCheck(self.current_turn)
+                                        if isinstance(self.selected_piece, p.Pawn) and (y == 0 or y == 7):
+                                            self.messages.append("Select a piece for promotion:")
+                                            new_piece = None
+                                            while new_piece is None:
+                                                for event in pygame.event.get():
+                                                    if event.type == pygame.QUIT:
+                                                        self.running = False
+                                                        pygame.quit()
+                                                        sys.exit()
 
-                                        if king_check and self.board.isCheckmate(self.current_turn):
+                                                self.displayPanel(screen)
+                                                self.drawBoard(screen)
+                                                self.drawPieces(self.board.board, screen)
+                                                self.drawMessages(screen)
+                                                new_piece = self.displayPromotion(
+                                                    screen, self.selected_piece.x, self.selected_piece.y, self.selected_piece.color
+                                                )
+
+                                                pygame.display.flip()
+                                                clock.tick(60)
+
+                                            self.board.board[self.selected_piece.y][self.selected_piece.x] = new_piece
+                                            promoted_msg = True
+
+                                        self.current_turn = "black" if self.current_turn == "white" else "white"
+                                        self.messages.append(f"Moved {self.selected_piece} to ({x}, {y})")
+                                        if promoted_msg:
+                                            self.messages.append(
+                                                f"Pawn promoted to {new_piece.__class__.__name__} at ({self.selected_piece.x}, {self.selected_piece.y})"
+                                            )
+                                            promoted_msg = False
+                                        self.selected = False
+                                        self.valid_moves = []
+                                        self.king_check = self.board.isKingInCheck(self.current_turn)
+
+                                        if self.king_check and self.board.isCheckmate(self.current_turn):
                                             self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
-                                        elif not king_check and self.board.isStalemate(self.current_turn):
+                                        elif not self.king_check and self.board.isStalemate(self.current_turn):
                                             self.messages.append("Stalemate! The game is a draw.")
 
                                         if self.board.isInsufficientMaterial():
                                             self.messages.append("Draw due to insufficient material.")
 
-                                        king_pos = self.board.getKingPosition(self.current_turn) if king_check else None
+                                        self.king_pos = self.board.getKingPosition(self.current_turn) if self.king_check else None
                                     else:
-                                        self.messages.append(f"Invalid move for {selected_piece} to ({x}, {y})")
+                                        self.messages.append(f"Invalid move for {self.selected_piece}")
                                 else:
                                     self.messages.append("Move not allowed")
                     else:
@@ -170,14 +255,15 @@ class Game:
             self.displayPanel(screen)
             self.drawBoard(screen)
 
-            if king_check and king_pos:
+
+            if self.king_check and self.king_pos:
                 pygame.draw.rect(screen, pygame.Color(255, 0, 0),
-                                 pygame.Rect(king_pos[0] * 65, king_pos[1] * 65, 65, 65), 3)
-            if selected:
+                                 pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
+            if self.selected:
                 pygame.draw.rect(screen, pygame.Color(0, 0, 150),
-                                 pygame.Rect(selected_piece.x * 65, selected_piece.y * 65, 65, 65), 3)
-            for move in valid_moves:
-                if selected_piece.isSquareEnemyPiece(move[0], move[1], self.board.board):
+                                 pygame.Rect(self.selected_piece.x * 65, self.selected_piece.y * 65, 65, 65), 3)
+            for move in self.valid_moves:
+                if self.selected_piece.isSquareEnemyPiece(move[0], move[1], self.board.board):
                     pygame.draw.rect(screen, pygame.Color(255, 101, 0),
                                      pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
                 else:

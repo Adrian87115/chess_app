@@ -48,10 +48,8 @@ class Board:
         king_position = self.getKingPosition(color)
         if not king_position:
             return []
-
         king_x, king_y = king_position
         king = self.board[king_y][king_x]
-
         ally_moves = king.getAllAllyMoves(self.board)
         valid_moves = []
 
@@ -59,16 +57,12 @@ class Board:
             original_x, original_y = piece.x, piece.y
             for move in moves:
                 target_x, target_y = move
-
                 target_piece = self.board[target_y][target_x]
-
                 self.board[target_y][target_x] = piece
                 self.board[original_y][original_x] = "."
                 piece.x, piece.y = target_x, target_y
-
                 if not self.isKingInCheck(color):
                     valid_moves.append((piece, move))
-
                 piece.x, piece.y = original_x, original_y
                 self.board[original_y][original_x] = piece
                 self.board[target_y][target_x] = target_piece
@@ -78,17 +72,12 @@ class Board:
     def isCheckmate(self, color):
         if not self.isKingInCheck(color):
             return False
-
         valid_moves = self.validMovesWhenCheck(color)
-
         return len(valid_moves) == 0
 
     def isStalemate(self, color):
-        # Check if the current player's king is not in check
         if self.isKingInCheck(color):
             return False
-
-        # Check if the current player has any valid moves
         for y in range(8):
             for x in range(8):
                 piece = self.board[y][x]
@@ -98,27 +87,33 @@ class Board:
         return True
 
     def isInsufficientMaterial(self):
-        # Count the remaining pieces
         pieces = []
         for row in self.board:
             for piece in row:
                 if piece != ".":
                     pieces.append(piece)
-
-        # Check for insufficient material scenarios
         if len(pieces) == 2:
-            # Only two kings left
             return True
         elif len(pieces) == 3:
-            # One king and one minor piece (bishop or knight)
             piece_shapes = [piece.shape.lower() for piece in pieces]
             if "ki" in piece_shapes and ("bi" in piece_shapes or "kn" in piece_shapes):
                 return True
         elif len(pieces) == 4:
-            # Two kings and two bishops, both bishops on the same color
             bishops = [piece for piece in pieces if piece.shape.lower() == "bi"]
             if len(bishops) == 2 and (bishops[0].color == bishops[1].color):
                 return True
-
         return False
+
+    def canPromote(self):
+        for row in self.board:
+            for piece in row:
+                if isinstance(piece, p.Pawn) and (piece.y == 0 or piece.y == 7):
+                    return True
+        return False
+
+    def promote(self, piece, new_piece):
+        new_piece.x = piece.x
+        new_piece.y = piece.y
+        new_piece.color = new_piece
+        self.board[piece.y][piece.x] = new_piece
 
