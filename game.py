@@ -1,6 +1,7 @@
 import board as b
 import pieces as p
 import app as a
+import ai as ai
 import pygame
 import sys
 
@@ -22,7 +23,7 @@ class Game:
                        "ki": pygame.image.load("images/king_black.png")}
         self.messages = []
         self.running = True
-        self.selected_piece = "."
+        self.selected_piece = None
         self.selected = False
         self.valid_moves = []
         self.king_check = False
@@ -68,7 +69,7 @@ class Game:
         self.current_turn = "white"
         self.messages = []
         self.running = True
-        self.selected_piece = "."
+        self.selected_piece = None
         self.selected = False
         self.valid_moves = []
         self.king_check = False
@@ -86,8 +87,8 @@ class Game:
         if button_rect_back.collidepoint(mouse_pos):
             current_image = back_image_hover
             if mouse_click[0]:
-                a.App().titleScreen()
                 self.resetGame()
+                a.App().titleScreen()
                 return
         else:
             current_image = back_image
@@ -157,6 +158,42 @@ class Game:
                                 return p.Bishop(x, y, color)
                             elif piece == "queen":
                                 return p.Queen(x, y, color)
+
+    def playStep(self, selected_piece, move):
+        new_tile_current_piece = self.board.board[move[1]][move[0]]
+        for row in self.board.board:
+            for piece in row:
+                if piece == selected_piece:
+                    self.board.board[piece.y][piece.x] = "."
+                    self.board.board[selected_piece.y][selected_piece.x] = selected_piece
+        reward = 0
+        done = False
+        score = 0
+        if new_tile_current_piece == ".":
+            pass
+        elif new_tile_current_piece.shape.title() == "P":
+            reward += 1
+        elif new_tile_current_piece.shape.title() == "R":
+            reward += 5
+        elif new_tile_current_piece.shape.title() == "B" or new_tile_current_piece.shape.title() == "Kn":
+            reward += 3
+        elif new_tile_current_piece.shape.title() == "Q":
+            reward += 10
+
+        if self.board.isCheckmate(selected_piece.color):
+            reward += 100
+            done = True
+        elif self.board.isCheck(selected_piece.color):
+            reward += 3
+        elif self.board.isStalemate(selected_piece.color):
+            reward += 1
+            done = True
+        elif self.board.isInsufficientMaterial():
+            reward += 1
+            done = True
+        score = reward
+        return reward, done, score
+
 
     def humanVsHuman(self, screen, clock):
         promoted_msg = False
@@ -279,4 +316,74 @@ class Game:
         pass
 
     def computerVsComputer(self, screen, clock):
-        pass
+        ai1 = ai.ChessAi()
+        ai2 = ai.ChessAi()
+        self.current_turn = "white"
+        last_move_time = pygame.time.get_ticks()
+        game_over = False
+
+        while self.running:
+            current_time = pygame.time.get_ticks()
+            elapsed_time = current_time - last_move_time
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+
+            if elapsed_time >= 10 and not game_over:
+                if self.current_turn == "white":
+                    piece, new_position = ai1.getBestMove(self.board, self.current_turn)
+                else:
+                    piece, new_position = ai2.getBestMove(self.board, self.current_turn)
+
+                if piece and new_position:
+                    x_start, y_start = piece.x, piece.y
+                    x_end, y_end = new_position
+
+                    did_move = piece.move(x_end, y_end, self.board.board)
+                    if did_move:
+                        if isinstance(piece, p.Pawn) and (y_end == 0 or y_end == 7):
+                            self.board.board[y_end][x_end] = p.Queen(x_end, y_end, self.current_turn)
+                        self.current_turn = "black" if self.current_turn == "white" else "white"
+                        # self.messages.append(f"{self.current_turn.title()}'s turn")
+                        self.king_check = self.board.isKingInCheck(self.current_turn)
+                        if self.king_check:
+                            if self.board.isCheckmate(self.current_turn):
+                                self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
+                                game_over = True
+                            elif self.board.isStalemate(self.current_turn):
+                                self.messages.append("Stalemate! The game is a draw.")
+                                game_over = True
+
+                        if self.board.isInsufficientMaterial():
+                            self.messages.append("Draw due to insufficient material.")
+                            game_over = True
+
+                        self.king_pos = self.board.getKingPosition(self.current_turn) if self.king_check else None
+                    else:
+                        self.messages.append(f"Invalid move for {piece}")
+                else:
+                    self.messages.append("No valid moves available")
+                last_move_time = pygame.time.get_ticks()
+            self.displayPanel(screen)
+            self.drawBoard(screen)
+            self.drawPieces(self.board.board, screen)
+            self.drawMessages(screen)
+            if self.king_check and self.king_pos:
+                pygame.draw.rect(screen, pygame.Color(255, 0, 0),
+                                 pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
+            if game_over:
+                self.messages.append("Game Over. Press Q to quit or R to restart.")
+
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_q:
+                            pygame.quit()
+                            sys.exit()
+                        elif event.key == pygame.K_r:
+                            self.resetGame()
+                            game_over = False
+
+            pygame.display.flip()
+            clock.tick(60)

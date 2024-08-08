@@ -104,6 +104,13 @@ class Board:
                 return True
         return False
 
+    def isCheck(self, current_turn):
+        for row in self.board:
+            for piece in row:
+                if piece != "." and piece.shape.title() == "Ki" and piece.color == current_turn:
+                    return piece.isCheck(self.board)
+        return False
+
     def canPromote(self):
         for row in self.board:
             for piece in row:
@@ -117,3 +124,27 @@ class Board:
         new_piece.color = new_piece
         self.board[piece.y][piece.x] = new_piece
 
+    def getBoard(self):
+        return self.board
+
+    def copyBoard(self):
+        return self.board
+
+    def simulateMove(self, piece, move):
+        new_board = self.board
+        current_x, current_y = piece.x, piece.y
+        target_x, target_y = move
+        self.board[target_y][target_x] = piece
+        self.board[current_y][current_x] = "."
+        piece.x, piece.y = target_x, target_y
+        return new_board
+
+    def simulateMoveObject(self, piece, move):
+        new_board = Board()
+        new_board.board = self.board
+        current_x, current_y = piece.x, piece.y
+        target_x, target_y = move
+        new_board.board[target_y][target_x] = piece
+        new_board.board[current_y][current_x] = "."
+        piece.x, piece.y = target_x, target_y
+        return new_board
