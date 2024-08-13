@@ -1,0 +1,15 @@
+get/lose:
+- pawn +1
+- rook +5
+- knight +3
+- bishop +3
+- queen +10
+
+win +100
+stalemate / insufficient material +1
+ 
+
+to do:
+check +1
+promotion works as capturing a piece
+punishments

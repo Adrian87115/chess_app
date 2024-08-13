@@ -20,7 +20,6 @@ class Agent:
         self.trainer = QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
 
     def getState(self, board):
-        # Convert board state to numerical format
         return self.boardToArray(board)
 
     def boardToArray(self, board):
@@ -52,6 +51,26 @@ class Agent:
         states, actions, rewards, next_states, dones = zip(*mini_sample)
         self.trainer.trainStep(states, actions, rewards, next_states, dones)
 
+    def getRandomMove(self, board, current_turn):
+        pieces_to_move = dict()
+
+        if board.isKingInCheck(current_turn):
+            valid_moves = board.validMovesWhenCheck(current_turn)
+            pieces_to_move = {piece: [move for p, move in valid_moves if p == piece] for piece, move in valid_moves}
+        else:
+            for row in board.getBoard():
+                for piece in row:
+                    if piece != "." and piece.color == current_turn:
+                        valid_moves = piece.validMoves(board.getBoard(), 1)
+                        if valid_moves:
+                            pieces_to_move[piece] = valid_moves
+
+        if not pieces_to_move:
+            return None
+        random_piece = random.choice(list(pieces_to_move.keys()))
+        random_move = random.choice(list(pieces_to_move[random_piece]))
+        return random_piece, random_move
+
     def getAction(self, state, current_turn):
         self.epsilon = max(10, 80 - self.n_games)
 
@@ -66,13 +85,13 @@ class Agent:
                         valid_moves = piece.validMoves(state.getBoard(), 1)
                         if valid_moves:
                             pieces_to_move[piece] = valid_moves
-
-        final_piece = next(iter(pieces_to_move))
-        final_move = (0, 0)
+        print(pieces_to_move)
+        final_piece = None
+        final_move = None
 
         if random.randint(0, 100) < self.epsilon:
-            piece = random.choice(list(pieces_to_move.keys()))
-            move = random.choice(pieces_to_move[piece])
+            final_piece = random.choice(list(pieces_to_move.keys()))
+            final_move = random.choice(pieces_to_move[final_piece])
         else:
             best_score = float('-inf')
             for piece, moves in pieces_to_move.items():
@@ -98,12 +117,15 @@ def train():
     record = 0
     current_turn = "white"
     while True:
+
         state_old = agent.getState(game.board)
         piece, move = agent.getAction(game.board, current_turn)
+        print(piece, move)
         reward, done, score = game.playStep(piece, move)
         state_new = agent.getState(game.board)
         agent.trainShortMemory(state_old, move, reward, state_new, done)
         agent.remember(state_old, move, reward, state_new, done)
+
         if done:
             game.resetGame()
             agent.n_games += 1
@@ -113,7 +135,9 @@ def train():
                 agent.model.saveModel()
 
             print("Game ", agent.n_games, "Score ", score, "record: ", record)
-            current_turn = "black" if current_turn == "white" else "white"
+            current_turn = "white"
+        current_turn = "black" if current_turn == "white" else "white"
+        game.board.displayBoard()
 
-if __name__ == '__main__':
-    train()
+
+

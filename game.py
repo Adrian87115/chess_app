@@ -1,7 +1,7 @@
 import board as b
 import pieces as p
 import app as a
-import ai as ai
+import agent as ai
 import pygame
 import sys
 
@@ -181,14 +181,17 @@ class Game:
             reward += 10
 
         if self.board.isCheckmate(selected_piece.color):
+            print("checkmate killed")
             reward += 100
             done = True
         elif self.board.isCheck(selected_piece.color):
             reward += 3
         elif self.board.isStalemate(selected_piece.color):
+            print("stalemate killed")
             reward += 1
             done = True
         elif self.board.isInsufficientMaterial():
+            print("material killed")
             reward += 1
             done = True
         score = reward
@@ -316,8 +319,8 @@ class Game:
         pass
 
     def computerVsComputer(self, screen, clock):
-        ai1 = ai.ChessAi()
-        ai2 = ai.ChessAi()
+        ai1 = ai.Agent()
+        ai2 = ai.Agent()
         self.current_turn = "white"
         last_move_time = pygame.time.get_ticks()
         game_over = False
@@ -331,11 +334,11 @@ class Game:
                     pygame.quit()
                     sys.exit()
 
-            if elapsed_time >= 10 and not game_over:
+            if elapsed_time >= 1000 and not game_over:
                 if self.current_turn == "white":
-                    piece, new_position = ai1.getBestMove(self.board, self.current_turn)
+                    piece, new_position = ai1.getAction(self.board, self.current_turn)# finally: the problem is with placing figure, sometimes it glitches and causes many figures to move at once, also it may lead to capturing king, and this leads to error where it cant fin d the postion of king so cant fine x and y from the nonetype
                 else:
-                    piece, new_position = ai2.getBestMove(self.board, self.current_turn)
+                    piece, new_position = ai2.getAction(self.board, self.current_turn)
 
                 if piece and new_position:
                     x_start, y_start = piece.x, piece.y

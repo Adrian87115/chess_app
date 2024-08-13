@@ -395,7 +395,11 @@ def simulateMoveAndCheck(piece, move, board):
     new_board[curr_y][curr_x] = "."
     new_board[new_y][new_x] = piece
     piece.x, piece.y = new_x, new_y
-    king = next(p for row in new_board for p in row if isinstance(p, King) and p.color == piece.color)
+    try:
+        king = next(p for row in new_board for p in row if isinstance(p, King) and p.color == piece.color)
+    except StopIteration:
+        return False
+
     result = king.isCheck(new_board)
     piece.x, piece.y = curr_x, curr_y
     new_board[curr_y][curr_x] = piece

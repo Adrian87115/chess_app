@@ -15,7 +15,14 @@ class Board:
 
     def displayBoard(self):
         for row in self.board:
-            print([figure.shape if figure else "." for figure in row])
+            row_display = ""
+            for piece in row:
+                if piece == ".":
+                    row_display += ". "
+                else:
+                    row_display += piece.shape + " "
+            print(row_display.strip())
+
 
     def getFigure(self, x, y):
         return self.board[x][y]
@@ -69,10 +76,34 @@ class Board:
 
         return valid_moves
 
+    def validMovesForAllPieces(self, color):
+        valid_moves_by_piece = {}
+        for row in self.board:
+            for piece in row:
+                if piece != "." and piece.color == color:
+                    potential_moves = piece.validMoves(self.board, 1)
+                    valid_moves = []
+                    for move in potential_moves:
+                        target_x, target_y = move
+                        original_piece = self.board[target_y][target_x]
+                        self.board[target_y][target_x] = piece
+                        self.board[piece.y][piece.x] = "."
+                        piece.x, piece.y = target_x, target_y
+                        if not self.isKingInCheck(color):
+                            valid_moves.append(move)
+                        piece.x, piece.y = piece.y, piece.x
+                        self.board[piece.y][piece.x] = piece
+                        self.board[target_y][target_x] = original_piece
+                    if valid_moves:
+                        valid_moves_by_piece[piece] = valid_moves
+
+        return valid_moves_by_piece
+
     def isCheckmate(self, color):
-        if not self.isKingInCheck(color):
+        if not self.isCheck(color):
             return False
         valid_moves = self.validMovesWhenCheck(color)
+        print(color)
         return len(valid_moves) == 0
 
     def isStalemate(self, color):

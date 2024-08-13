@@ -53,7 +53,7 @@ class QTrainer:
             q_new = reward[i]
             if not done[i]:
                 q_new = reward[i] + self.gamma * torch.max(self.model(next_state[i]))
-            action_index = action[i].item()
+            action_index = action[i].item() if len(action[i].shape) == 0 else torch.argmax(action[i]).item()#action_index = action[i].item()
             if action_index < target.shape[1]:
                 target[i][action_index] = q_new
         self.optimizer.zero_grad()
