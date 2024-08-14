@@ -1,4 +1,5 @@
 import pieces as p
+import copy
 
 class Board:
     def __init__(self):
@@ -103,7 +104,6 @@ class Board:
         if not self.isCheck(color):
             return False
         valid_moves = self.validMovesWhenCheck(color)
-        print(color)
         return len(valid_moves) == 0
 
     def isStalemate(self, color):
@@ -171,11 +171,11 @@ class Board:
         return new_board
 
     def simulateMoveObject(self, piece, move):
-        new_board = Board()
-        new_board.board = self.board
+        new_board = copy.deepcopy(self)
+        new_piece = copy.deepcopy(piece)
         current_x, current_y = piece.x, piece.y
         target_x, target_y = move
-        new_board.board[target_y][target_x] = piece
+        new_board.board[target_y][target_x] = new_piece
         new_board.board[current_y][current_x] = "."
-        piece.x, piece.y = target_x, target_y
+        new_piece.x, new_piece.y = target_x, target_y
         return new_board

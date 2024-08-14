@@ -159,16 +159,17 @@ class Game:
                             elif piece == "queen":
                                 return p.Queen(x, y, color)
 
-    def playStep(self, selected_piece, move):
+    def playStep(self, selected_piece, move):# yes, this function is the main reason for not working properly, maybe when checkmate it has no idea what to do
+        # now i have discovered that in the beggining of this funciton the board state is not the same as before calling it
         new_tile_current_piece = self.board.board[move[1]][move[0]]
-        for row in self.board.board:
-            for piece in row:
-                if piece == selected_piece:
-                    self.board.board[piece.y][piece.x] = "."
-                    self.board.board[selected_piece.y][selected_piece.x] = selected_piece
+        x_end, y_end = move
+        # print("before move")
+        # self.board.displayBoard()
+        self.board.board = selected_piece.move2(x_end, y_end, self.board.board)
+        # print("after move")
+        # self.board.displayBoard()
         reward = 0
         done = False
-        score = 0
         if new_tile_current_piece == ".":
             pass
         elif new_tile_current_piece.shape.title() == "P":
@@ -334,7 +335,7 @@ class Game:
                     pygame.quit()
                     sys.exit()
 
-            if elapsed_time >= 1000 and not game_over:
+            if elapsed_time >= 10 and not game_over:
                 if self.current_turn == "white":
                     piece, new_position = ai1.getAction(self.board, self.current_turn)# finally: the problem is with placing figure, sometimes it glitches and causes many figures to move at once, also it may lead to capturing king, and this leads to error where it cant fin d the postion of king so cant fine x and y from the nonetype
                 else:

@@ -35,6 +35,13 @@ class Piece:
             return True
         return False
 
+    def move2(self, new_x, new_y, board):
+        board[self.y][self.x] = "."
+        self.x = new_x
+        self.y = new_y
+        board[self.y][self.x] = self
+        return board
+
     def threatensKing(self, king_x, king_y, board):
         pass
 
