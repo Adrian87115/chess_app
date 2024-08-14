@@ -5,6 +5,7 @@ from collections import deque
 import game as g
 import pieces as p
 from model import DQN, QTrainer
+import copy
 
 MAX_MEMORY_SIZE = 100000
 BATCH_SIZE = 1000
@@ -16,7 +17,7 @@ class Agent:
         self.epsilon = 0
         self.gamma = 0
         self.memory = deque(maxlen=MAX_MEMORY_SIZE)
-        self.model = DQN(64, 256, 1)  # Adjust input size based on board representation
+        self.model = DQN(64, 256, 1)
         self.trainer = QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
 
     def getState(self, board):
@@ -109,31 +110,56 @@ class Agent:
         return final_piece, final_move
 
 def train():
-    agent = Agent()
+    agent_white = Agent()
+    agent_black = Agent()
     game = g.Game()
-    record = 0
-    score_game = 0
+    record_white = 0
+    record_black = 0
+    score_game_white = 0
+    score_game_black = 0
     current_turn = "white"
+    track_error_boards = []
     while True:
+        if current_turn == "white":
+            agent = agent_white
+        else:
+            agent = agent_black
 
         state_old = agent.getState(game.board)
         piece, move = agent.getAction(game.board, current_turn)
-        reward, done, score = game.playStep(piece, move)
-        score_game += score
+        try:
+            reward, done, score = game.playStep(piece, move)
+            track_error_boards.append(copy.deepcopy(game.board))
+        except AttributeError:# sometimes crashes - king can capture protected figure and be captured himself
+            for board in track_error_boards:
+                print("\n")
+                board.displayBoard()
+                print("\n")
+            game.board.displayBoard()
+        if current_turn == "white":
+            score_game_white += score
+        else:
+            score_game_black += score
         state_new = agent.getState(game.board)
         agent.trainShortMemory(state_old, move, reward, state_new, done)
         agent.remember(state_old, move, reward, state_new, done)
 
         if done:
-            game.resetGame()
             agent.n_games += 1
-            agent.trainLongMemory()
-
-            if score_game > record:
-                record = score_game
-                agent.model.saveModel()
-
-            print("Game ", agent.n_games, "Score ", score_game, "record: ", record)
+            winner = game.board.findWinner()
+            game.resetGame()
+            track_error_boards = []
+            agent_white.trainLongMemory()
+            agent_black.trainLongMemory()
+            if score_game_black > record_black:
+                record_black = score_game_black
+                agent_black.model.saveModel("model_black.pth")
+            if score_game_white > record_white:
+                record_white = score_game_white
+                agent_white.model.saveModel("model_white.pth")
+            print("Game ", agent.n_games, ", Score white ", score_game_white, ", Score black ", score_game_black, ", Winner: ", winner, ", Record white: ", record_white, ", Record black: ", record_black)
             current_turn = "white"
-            score_game = 0
+            score_game_white = 0
+            score_game_black = 0
+
         current_turn = "black" if current_turn == "white" else "white"

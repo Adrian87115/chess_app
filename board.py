@@ -106,6 +106,14 @@ class Board:
         valid_moves = self.validMovesWhenCheck(color)
         return len(valid_moves) == 0
 
+    def findWinner(self):
+        if self.isCheckmate("black"):
+            return "white"
+        elif self.isCheckmate("white"):
+            return "black"
+        else:
+            return "draw"
+
     def isStalemate(self, color):
         if self.isKingInCheck(color):
             return False

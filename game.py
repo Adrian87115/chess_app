@@ -159,15 +159,10 @@ class Game:
                             elif piece == "queen":
                                 return p.Queen(x, y, color)
 
-    def playStep(self, selected_piece, move):# yes, this function is the main reason for not working properly, maybe when checkmate it has no idea what to do
-        # now i have discovered that in the beggining of this funciton the board state is not the same as before calling it
+    def playStep(self, selected_piece, move):
         new_tile_current_piece = self.board.board[move[1]][move[0]]
         x_end, y_end = move
-        # print("before move")
-        # self.board.displayBoard()
         self.board.board = selected_piece.move2(x_end, y_end, self.board.board)
-        # print("after move")
-        # self.board.displayBoard()
         reward = 0
         done = False
         if new_tile_current_piece == ".":
@@ -181,18 +176,18 @@ class Game:
         elif new_tile_current_piece.shape.title() == "Q":
             reward += 10
 
-        if self.board.isCheckmate("white") or self.board.isCheckmate("black"):# rewards are no comulating
-            print("checkmate killed")
-            reward += 100
+        if self.board.isCheckmate("white") or self.board.isCheckmate("black"):
+            print("checkmate")
+            reward += 1000
             done = True
         elif self.board.isCheck("white") or self.board.isCheck("black"):
             reward += 3
         elif self.board.isStalemate("white") or self.board.isStalemate("black"):
-            print("stalemate killed")
+            print("stalemate")
             reward += 1
             done = True
         elif self.board.isInsufficientMaterial():
-            print("material killed")
+            print("material")
             reward += 1
             done = True
         score = reward
@@ -313,11 +308,158 @@ class Game:
             self.drawPieces(self.board.board, screen)
             self.drawMessages(screen)
             pygame.display.flip()
-
             clock.tick(60)
 
-    def humanVsComputer(self, screen, clock, player_color):
-        pass
+    def humanVsComputer(self, screen, clock, player_color):# extremely weird glitch: when pawn promoted what causes check, then player has to move the king, then game plays as normal
+        promoted_msg = False
+        if player_color == "white":
+            ai_color = "black"
+        else:
+            ai_color = "white"
+        ai_agent = ai.Agent()
+        self.current_turn = "white"
+
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    x, y = self.getSquare()
+                    if 0 <= x < 8 and 0 <= y < 8:
+                        if not self.selected:
+                            self.selected_piece = self.board.getFigure(y, x)
+                            if self.selected_piece != "." and self.selected_piece.color == self.current_turn:
+                                self.king_check = self.board.isKingInCheck(self.current_turn)
+                                if self.king_check:
+                                    if self.board.isCheckmate(self.current_turn):
+                                        self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
+                                    else:
+                                        check_resolving_moves = self.board.validMovesWhenCheck(self.current_turn)
+                                        pieces_that_can_move = {move[0] for move in check_resolving_moves}
+
+                                        if self.selected_piece not in pieces_that_can_move:
+                                            self.messages.append("You must move a piece to resolve the check")
+                                            self.selected_piece = None
+                                        else:
+                                            self.messages.append(f"Selected piece {self.selected_piece}")
+                                            self.selected = True
+                                            self.valid_moves = [move[1] for move in check_resolving_moves if move[0] == self.selected_piece]
+                                else:
+                                    self.messages.append(f"Selected piece {self.selected_piece}")
+                                    self.selected = True
+                                    self.valid_moves = self.selected_piece.validMoves(self.board.board, 1)
+                            else:
+                                self.messages.append("Not a valid piece or not your turn")
+                                self.selected_piece = None
+                        else:
+                            if (x, y) == (self.selected_piece.x, self.selected_piece.y):
+                                self.messages.append("Unselected")
+                                self.selected = False
+                                self.valid_moves = []
+                            else:
+                                if (x, y) in self.valid_moves:
+                                    did_move = self.selected_piece.move(x, y, self.board.board)
+                                    if did_move:
+                                        if isinstance(self.selected_piece, p.Pawn) and (y == 0 or y == 7):
+                                            self.messages.append("Select a piece for promotion:")
+                                            new_piece = None
+                                            while new_piece is None:
+                                                for event in pygame.event.get():
+                                                    if event.type == pygame.QUIT:
+                                                        self.running = False
+                                                        pygame.quit()
+                                                        sys.exit()
+
+                                                self.displayPanel(screen)
+                                                self.drawBoard(screen)
+                                                self.drawPieces(self.board.board, screen)
+                                                self.drawMessages(screen)
+                                                new_piece = self.displayPromotion(screen, self.selected_piece.x, self.selected_piece.y, self.selected_piece.color)
+
+                                                pygame.display.flip()
+                                                clock.tick(60)
+
+                                            self.board.board[self.selected_piece.y][self.selected_piece.x] = new_piece
+                                            promoted_msg = True
+
+                                        self.current_turn = "black" if self.current_turn == "white" else "white"
+                                        self.messages.append(f"Moved {self.selected_piece} to ({x}, {y})")
+                                        if promoted_msg:
+                                            self.messages.append(f"Pawn promoted to {new_piece.__class__.__name__} at ({self.selected_piece.x}, {self.selected_piece.y})")
+                                            promoted_msg = False
+                                        self.selected = False
+                                        self.valid_moves = []
+                                        self.king_check = self.board.isKingInCheck(self.current_turn)
+
+                                        if self.king_check and self.board.isCheckmate(self.current_turn):
+                                            self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
+                                            self.running = False
+                                        elif not self.king_check and self.board.isStalemate(self.current_turn):
+                                            self.messages.append("Stalemate! The game is a draw.")
+                                            self.running = False
+
+                                        if self.board.isInsufficientMaterial():
+                                            self.messages.append("Draw due to insufficient material.")
+                                            self.running = False
+
+                                        self.king_pos = self.board.getKingPosition(
+                                            self.current_turn) if self.king_check else None
+                                    else:
+                                        self.messages.append(f"Invalid move for {self.selected_piece}")
+                                else:
+                                    self.messages.append("Move not allowed")
+                    else:
+                        self.messages.append("Not part of the board")
+
+            if self.current_turn == ai_color and not self.king_check:
+                piece, new_position = ai_agent.getAction(self.board, self.current_turn)
+                if piece and new_position:
+                    x_end, y_end = new_position
+                    did_move = piece.move(x_end, y_end, self.board.board)
+                    if did_move:
+                        if isinstance(piece, p.Pawn) and (y_end == 0 or y_end == 7):
+                            self.board.board[y_end][x_end] = p.Queen(x_end, y_end, self.current_turn)
+                        self.current_turn = "black" if self.current_turn == "white" else "white"
+                        self.messages.append(f"{self.current_turn.title()}'s move: {piece} to ({x_end}, {y_end})")
+                        self.king_check = self.board.isKingInCheck(self.current_turn)
+                        if self.king_check:
+                            if self.board.isCheckmate(self.current_turn):
+                                self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
+                                self.running = False
+                            elif self.board.isStalemate(self.current_turn):
+                                self.messages.append("Stalemate! The game is a draw.")
+                                self.running = False
+
+                        if self.board.isInsufficientMaterial():
+                            self.messages.append("Draw due to insufficient material.")
+                            self.running = False
+
+                        self.king_pos = self.board.getKingPosition(self.current_turn) if self.king_check else None
+                    else:
+                        self.messages.append(f"Invalid move for {piece}")
+                else:
+                    self.messages.append("No valid moves available")
+
+            self.displayPanel(screen)
+            self.drawBoard(screen)
+            if self.king_check and self.king_pos:
+                pygame.draw.rect(screen, pygame.Color(255, 0, 0),
+                                 pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
+            if self.selected:
+                pygame.draw.rect(screen, pygame.Color(0, 0, 150),
+                                 pygame.Rect(self.selected_piece.x * 65, self.selected_piece.y * 65, 65, 65), 3)
+            for move in self.valid_moves:
+                if self.selected_piece.isSquareEnemyPiece(move[0], move[1], self.board.board):
+                    pygame.draw.rect(screen, pygame.Color(255, 101, 0),
+                                     pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
+                else:
+                    pygame.draw.rect(screen, pygame.Color(0, 255, 0),
+                                     pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
+            self.drawPieces(self.board.board, screen)
+            self.drawMessages(screen)
+            pygame.display.flip()
+            clock.tick(60)
 
     def computerVsComputer(self, screen, clock):
         ai1 = ai.Agent()
@@ -335,9 +477,9 @@ class Game:
                     pygame.quit()
                     sys.exit()
 
-            if elapsed_time >= 10 and not game_over:
+            if elapsed_time >= 100 and not game_over:
                 if self.current_turn == "white":
-                    piece, new_position = ai1.getAction(self.board, self.current_turn)# finally: the problem is with placing figure, sometimes it glitches and causes many figures to move at once, also it may lead to capturing king, and this leads to error where it cant fin d the postion of king so cant fine x and y from the nonetype
+                    piece, new_position = ai1.getAction(self.board, self.current_turn)
                 else:
                     piece, new_position = ai2.getAction(self.board, self.current_turn)
 
