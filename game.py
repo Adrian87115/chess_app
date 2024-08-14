@@ -181,13 +181,13 @@ class Game:
         elif new_tile_current_piece.shape.title() == "Q":
             reward += 10
 
-        if self.board.isCheckmate(selected_piece.color):
+        if self.board.isCheckmate("white") or self.board.isCheckmate("black"):# rewards are no comulating
             print("checkmate killed")
             reward += 100
             done = True
-        elif self.board.isCheck(selected_piece.color):
+        elif self.board.isCheck("white") or self.board.isCheck("black"):
             reward += 3
-        elif self.board.isStalemate(selected_piece.color):
+        elif self.board.isStalemate("white") or self.board.isStalemate("black"):
             print("stalemate killed")
             reward += 1
             done = True

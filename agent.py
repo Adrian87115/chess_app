@@ -73,8 +73,6 @@ class Agent:
 
     def getAction(self, state, current_turn):
         self.epsilon = max(10, 80 - self.n_games)
-        # print("before move")
-        # state.displayBoard()
         pieces_to_move = dict()
         if state.isKingInCheck(current_turn):
             valid_moves = state.validMovesWhenCheck(current_turn)
@@ -86,53 +84,43 @@ class Agent:
                         valid_moves = piece.validMoves(state.getBoard(), 1)
                         if valid_moves:
                             pieces_to_move[piece] = valid_moves
-        # print(pieces_to_move)
         final_piece = None
         final_move = None
 
-        try:
-            if random.randint(0, 100) < self.epsilon:
-                final_piece = random.choice(list(pieces_to_move.keys()))
-                final_move = random.choice(pieces_to_move[final_piece])
-            else:
-                best_score = float('-inf')
-                for piece, moves in pieces_to_move.items():
-                    for move in moves:
-                        new_state = state.simulateMoveObject(piece, move)# omg, most likely simulated move is actually executed
-                        new_state_board = self.boardToArray(new_state)
-                        state_tensor = torch.tensor(new_state_board, dtype=torch.float32).unsqueeze(0)
+        if random.randint(0, 100) < self.epsilon:
+            final_piece = random.choice(list(pieces_to_move.keys()))
+            final_move = random.choice(pieces_to_move[final_piece])
+        else:
+            best_score = float('-inf')
+            for piece, moves in pieces_to_move.items():
+                for move in moves:
+                    new_state = state.simulateMoveObject(piece, move)
+                    new_state_board = self.boardToArray(new_state)
+                    state_tensor = torch.tensor(new_state_board, dtype = torch.float32).unsqueeze(0)
 
-                        with torch.no_grad():
-                            prediction = self.model(state_tensor)
+                    with torch.no_grad():
+                        prediction = self.model(state_tensor)
 
-                        score = prediction.item()
-                        if score > best_score:
-                            best_score = score
-                            final_piece = piece
-                            final_move = move
-        except IndexError:
-            state.displayBoard()
-            print(current_turn)
-        # print("after move")# based on what i can see this function actually changes the board, but i should only find a proper move
-        # state.displayBoard()
+                    score = prediction.item()
+                    if score > best_score:
+                        best_score = score
+                        final_piece = piece
+                        final_move = move
         return final_piece, final_move
 
 def train():
     agent = Agent()
     game = g.Game()
     record = 0
+    score_game = 0
     current_turn = "white"
     while True:
 
         state_old = agent.getState(game.board)
-        # print("Beggining of the loop")
-        # game.board.displayBoard()
         piece, move = agent.getAction(game.board, current_turn)
-        # print(piece, move)
         reward, done, score = game.playStep(piece, move)
+        score_game += score
         state_new = agent.getState(game.board)
-        # print("End of the loop")
-        # game.board.displayBoard()
         agent.trainShortMemory(state_old, move, reward, state_new, done)
         agent.remember(state_old, move, reward, state_new, done)
 
@@ -140,11 +128,12 @@ def train():
             game.resetGame()
             agent.n_games += 1
             agent.trainLongMemory()
-            if score > record:
-                record = score
+
+            if score_game > record:
+                record = score_game
                 agent.model.saveModel()
 
-            print("Game ", agent.n_games, "Score ", score, "record: ", record)
+            print("Game ", agent.n_games, "Score ", score_game, "record: ", record)
             current_turn = "white"
+            score_game = 0
         current_turn = "black" if current_turn == "white" else "white"
-        # game.board.displayBoard()
