@@ -14,6 +14,17 @@ class Board:
                       [p.Pawn(x, 6, "white") for x in range(8)],
                       [p.Rook(0, 7, "white"), p.Knight(1, 7, "white"), p.Bishop(2, 7, "white"), p.Queen(3, 7, "white"), p.King(4, 7, "white"), p.Bishop(5, 7, "white"), p.Knight(6, 7, "white"), p.Rook(7, 7, "white")]]
 
+        # self.board = [
+        #     [".", p.Queen(1, 0, "black"), ".", p.Knight(3, 0, "black"), ".", p.Pawn(5, 0, "white"), ".", "."],
+        #     [".", ".", ".", ".", ".", ".", ".", "."],
+        #     [".", ".", p.Knight(2, 2, "black"), p.Rook(3, 2, "black"), ".", ".", p.King(6, 2, "black"), "."],
+        #     [".", p.Bishop(1, 3, "black"), ".", ".", ".", ".", ".", "."],
+        #     [p.Rook(0, 4, "black"), ".", ".", ".", ".", ".", ".", "."],
+        #     [".", p.King(1, 5, "white"), ".", ".", p.Bishop(4, 5, "white"), ".", ".", p.Pawn(7, 5, "white")],
+        #     [".", ".", ".", ".", ".", ".", ".", p.Pawn(7, 6, "white")],
+        #     [".", ".", p.Rook(2, 7, "white"), ".", p.Rook(4, 7, "white"), ".", ".", "."]
+        # ]
+
     def displayBoard(self):
         for row in self.board:
             row_display = ""

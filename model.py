@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as f
 import os
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 # Deep Q Learning agent
 class DQN(nn.Module):
@@ -60,3 +62,26 @@ class QTrainer:
         loss = self.criterion(target, pred)
         loss.backward()
         self.optimizer.step()
+
+
+def plot(scores_white, mean_scores_white, scores_black, mean_scores_black):
+    plt.clf()
+    plt.title('Training')
+    plt.xlabel('Number of Games')
+    plt.ylabel('Score')
+
+    plt.plot(scores_white, 'r-', label = 'Scores White')
+    plt.plot(mean_scores_white, 'r--', label = 'Mean Scores White')
+    plt.plot(scores_black, 'b-', label = 'Scores Black')
+    plt.plot(mean_scores_black, 'b--', label = 'Mean Scores Black')
+
+    plt.legend()
+    plt.xlim(xmin = 0)
+
+    plt.text(len(scores_white) - 1, scores_white[-1], str(scores_white[-1]), color = 'red')
+    plt.text(len(mean_scores_white) - 1, mean_scores_white[-1], str(mean_scores_white[-1]), color = 'red')
+    plt.text(len(scores_black) - 1, scores_black[-1], str(scores_black[-1]), color = 'blue')
+    plt.text(len(mean_scores_black) - 1, mean_scores_black[-1], str(mean_scores_black[-1]), color = 'blue')
+
+    plt.show(block=False)
+    plt.pause(0.1)

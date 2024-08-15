@@ -4,8 +4,9 @@ import numpy as np
 from collections import deque
 import game as g
 import pieces as p
-from model import DQN, QTrainer
+import model as m
 import copy
+
 
 MAX_MEMORY_SIZE = 100000
 BATCH_SIZE = 1000
@@ -17,8 +18,8 @@ class Agent:
         self.epsilon = 0
         self.gamma = 0
         self.memory = deque(maxlen=MAX_MEMORY_SIZE)
-        self.model = DQN(64, 256, 1)
-        self.trainer = QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
+        self.model = m.DQN(64, 256, 1)
+        self.trainer = m.QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
 
     def getState(self, board):
         return self.boardToArray(board)
@@ -82,7 +83,7 @@ class Agent:
             for row in state.getBoard():
                 for piece in row:
                     if piece != "." and piece.color == current_turn:
-                        valid_moves = piece.validMoves(state.getBoard(), 1)
+                        valid_moves = piece.validMoves(state.board, 1)
                         if valid_moves:
                             pieces_to_move[piece] = valid_moves
         final_piece = None
@@ -109,6 +110,7 @@ class Agent:
                         final_move = move
         return final_piece, final_move
 
+
 def train():
     agent_white = Agent()
     agent_black = Agent()
@@ -119,6 +121,16 @@ def train():
     score_game_black = 0
     current_turn = "white"
     track_error_boards = []
+
+    plot_scores_white = []
+    plot_mean_scores_white = []
+    total_score_white = 0
+    plot_scores_black = []
+    plot_mean_scores_black = []
+    total_score_black = 0
+
+    n_games = 0
+
     while True:
         if current_turn == "white":
             agent = agent_white
@@ -145,7 +157,8 @@ def train():
         agent.remember(state_old, move, reward, state_new, done)
 
         if done:
-            agent.n_games += 1
+            n_games += 1
+            agent.n_games = n_games
             winner = game.board.findWinner()
             game.resetGame()
             track_error_boards = []
@@ -158,6 +171,21 @@ def train():
                 record_white = score_game_white
                 agent_white.model.saveModel("model_white.pth")
             print("Game ", agent.n_games, ", Score white ", score_game_white, ", Score black ", score_game_black, ", Winner: ", winner, ", Record white: ", record_white, ", Record black: ", record_black)
+
+            plot_scores_white.append(score_game_white)
+            total_score_white += score_game_white
+            mean_score_white = total_score_white / agent.n_games
+            plot_mean_scores_white.append(mean_score_white)
+
+            plot_scores_black.append(score_game_black)
+            total_score_black += score_game_black
+            mean_score_black = total_score_black / agent.n_games# something wrong with mean values
+            plot_mean_scores_black.append(mean_score_black)
+
+            m.plot(plot_scores_white, plot_mean_scores_white, plot_scores_black, plot_mean_scores_black)
+
+
+
             current_turn = "white"
             score_game_white = 0
             score_game_black = 0

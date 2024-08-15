@@ -311,6 +311,7 @@ class Game:
             clock.tick(60)
 
     def humanVsComputer(self, screen, clock, player_color):# extremely weird glitch: when pawn promoted what causes check, then player has to move the king, then game plays as normal
+        #even weirder, always when enemy checked then player has to move the enemy king
         promoted_msg = False
         if player_color == "white":
             ai_color = "black"

@@ -384,10 +384,13 @@ class King(Piece):
             new_x = curr_x + d_x
             new_y = curr_y + d_y
             if 0 <= new_x < 8 and 0 <= new_y < 8:
-                if (new_x, new_y) not in invalid_moves and (
-                        self.isSquareEnemyPiece(new_x, new_y, board) or self.isSquareEmpty(new_x, new_y, board)):
-                    valid_moves.append((new_x, new_y))
-
+                if (new_x, new_y) not in invalid_moves and (self.isSquareEnemyPiece(new_x, new_y, board) or self.isSquareEmpty(new_x, new_y, board)):
+                    temp_board = [row[:] for row in board]
+                    temp_board[new_y][new_x] = self
+                    temp_board[curr_y][curr_x] = "."
+                    temp_king = King(new_x, new_y, self.color)
+                    if not temp_king.isCheck(temp_board):
+                        valid_moves.append((new_x, new_y))
         return valid_moves
 
     def isCheck(self, board):
@@ -402,10 +405,7 @@ def simulateMoveAndCheck(piece, move, board):
     new_board[curr_y][curr_x] = "."
     new_board[new_y][new_x] = piece
     piece.x, piece.y = new_x, new_y
-    try:
-        king = next(p for row in new_board for p in row if isinstance(p, King) and p.color == piece.color)
-    except StopIteration:
-        return False
+    king = next(p for row in new_board for p in row if isinstance(p, King) and p.color == piece.color)
 
     result = king.isCheck(new_board)
     piece.x, piece.y = curr_x, curr_y
