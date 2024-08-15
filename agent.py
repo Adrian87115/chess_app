@@ -10,7 +10,7 @@ import copy
 
 MAX_MEMORY_SIZE = 100000
 BATCH_SIZE = 1000
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 
 class Agent:
     def __init__(self):
@@ -19,7 +19,13 @@ class Agent:
         self.gamma = 0
         self.memory = deque(maxlen=MAX_MEMORY_SIZE)
         self.model = m.DQN(64, 256, 1)
+        self.load_model("model/model_white.pth")
         self.trainer = m.QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
+
+    def load_model(self, model_path):
+        state_dict = torch.load(model_path)
+        self.model.load_state_dict(state_dict)
+        self.model.eval()
 
     def getState(self, board):
         return self.boardToArray(board)
@@ -120,7 +126,6 @@ def train():
     score_game_white = 0
     score_game_black = 0
     current_turn = "white"
-    track_error_boards = []
 
     plot_scores_white = []
     plot_mean_scores_white = []
@@ -134,27 +139,31 @@ def train():
     while True:
         if current_turn == "white":
             agent = agent_white
+            opponent = agent_black
         else:
             agent = agent_black
+            opponent = agent_white
 
         state_old = agent.getState(game.board)
         piece, move = agent.getAction(game.board, current_turn)
-        try:
-            reward, done, score = game.playStep(piece, move)
-            track_error_boards.append(copy.deepcopy(game.board))
-        except AttributeError:# sometimes crashes - king can capture protected figure and be captured himself
-            for board in track_error_boards:
-                print("\n")
-                board.displayBoard()
-                print("\n")
-            game.board.displayBoard()
+        reward, done, score = game.playStep(piece, move)
+        if game.board.isStalemate("white") or game.board.isStalemate("black") or game.board.isInsufficientMaterial():
+            print("done")
+            reward -= 100
         if current_turn == "white":
             score_game_white += score
+            score_game_black -= score
         else:
             score_game_black += score
+            score_game_white -= score
+
         state_new = agent.getState(game.board)
+
+
         agent.trainShortMemory(state_old, move, reward, state_new, done)
         agent.remember(state_old, move, reward, state_new, done)
+        opponent.trainShortMemory(state_old, move, -(abs(reward)), state_new, done)
+        opponent.remember(state_old, move, -(abs(reward)), state_new, done)
 
         if done:
             n_games += 1

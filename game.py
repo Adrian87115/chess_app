@@ -160,11 +160,14 @@ class Game:
                                 return p.Queen(x, y, color)
 
     def playStep(self, selected_piece, move):
+        will_promote = self.board.willPromote(selected_piece, move)
         new_tile_current_piece = self.board.board[move[1]][move[0]]
         x_end, y_end = move
         self.board.board = selected_piece.move2(x_end, y_end, self.board.board)
         reward = 0
         done = False
+        if will_promote:
+            reward += 10
         if new_tile_current_piece == ".":
             pass
         elif new_tile_current_piece.shape.title() == "P":
@@ -184,11 +187,9 @@ class Game:
             reward += 3
         elif self.board.isStalemate("white") or self.board.isStalemate("black"):
             print("stalemate")
-            reward += 1
             done = True
         elif self.board.isInsufficientMaterial():
             print("material")
-            reward += 1
             done = True
         score = reward
         return reward, done, score
