@@ -124,18 +124,13 @@ class Game:
         button_rects = {}
         images = {}
         hover_images = {}
+
         for index, piece in enumerate(['rook', 'knight', 'bishop', 'queen']):
             y_position = panel_y + index * (button_size + spacing)
             rect = pygame.Rect(panel_x, y_position, button_size, button_size)
             button_rects[piece] = rect
-            images[piece] = pygame.transform.scale(
-                pygame.image.load(f"images/{piece}_{color}.png"),
-                (button_size, button_size)
-            )
-            hover_images[piece] = pygame.transform.scale(
-                pygame.image.load(f"images/{piece}_hover.png"),
-                (button_size, button_size)
-            )
+            images[piece] = pygame.transform.scale(pygame.image.load(f"images/{piece}_{color}.png"), (button_size, button_size))
+            hover_images[piece] = pygame.transform.scale(pygame.image.load(f"images/{piece}_hover.png"),(button_size, button_size))
         pygame.draw.rect(screen, (128, 128, 128), panel)
         mouse_pos = pygame.mouse.get_pos()
 
@@ -168,6 +163,7 @@ class Game:
         done = False
         if will_promote:
             reward += 10
+
         if new_tile_current_piece == ".":
             pass
         elif new_tile_current_piece.shape.title() == "P":
@@ -292,7 +288,6 @@ class Game:
             self.displayPanel(screen)
             self.drawBoard(screen)
 
-
             if self.king_check and self.king_pos:
                 pygame.draw.rect(screen, pygame.Color(255, 0, 0),
                                  pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
@@ -311,8 +306,7 @@ class Game:
             pygame.display.flip()
             clock.tick(60)
 
-    def humanVsComputer(self, screen, clock, player_color):# extremely weird glitch: when pawn promoted what causes check, then player has to move the king, then game plays as normal
-        #even weirder, always when enemy checked then player has to move the enemy king
+    def humanVsComputer(self, screen, clock, player_color):
         promoted_msg = False
         if player_color == "white":
             ai_color = "black"
@@ -470,7 +464,6 @@ class Game:
                         elif event.key == pygame.K_r:
                             self.resetGame()
                             self.running = False
-
             pygame.display.flip()
             clock.tick(60)
 
@@ -494,7 +487,7 @@ class Game:
                 if self.current_turn == "white":
                     piece, new_position = ai1.getAction(self.board, self.current_turn)
                 else:
-                    piece, new_position = ai2.getRandomMove(self.board, self.current_turn)
+                    piece, new_position = ai2.getAction(self.board, self.current_turn)
 
                 if piece and new_position:
                     x_start, y_start = piece.x, piece.y

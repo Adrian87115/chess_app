@@ -74,11 +74,11 @@ class Board:
                 piece.x, piece.y = original_x, original_y
                 self.board[original_y][original_x] = piece
                 self.board[target_y][target_x] = target_piece
-
         return valid_moves
 
     def validMovesForAllPieces(self, color):
         valid_moves_by_piece = {}
+
         for row in self.board:
             for piece in row:
                 if piece != "." and piece.color == color:
@@ -97,7 +97,6 @@ class Board:
                         self.board[target_y][target_x] = original_piece
                     if valid_moves:
                         valid_moves_by_piece[piece] = valid_moves
-
         return valid_moves_by_piece
 
     def isCheckmate(self, color):

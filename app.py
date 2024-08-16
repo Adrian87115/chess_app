@@ -36,7 +36,6 @@ class App:
             button_height = text_height + 2 * button_padding
             buttons[label] = pygame.Rect(0, 0, button_width, button_height)
             total_height += button_height + 10
-
         start_y = (screen_height - total_height) // 2
 
         for i, label in enumerate(button_labels):
@@ -50,7 +49,6 @@ class App:
             self.screen.fill((128, 128, 128))
             mouse_pos = pygame.mouse.get_pos()
             mouse_click = pygame.mouse.get_pressed()
-
             for button_text, button_rect in buttons.items():
                 if button_rect.collidepoint(mouse_pos):
                     current_button_color = button_hover_color
@@ -60,7 +58,6 @@ class App:
                         return
                 else:
                     current_button_color = button_color
-
                 pygame.draw.rect(self.screen, current_button_color, button_rect)
                 text_surface = button_font.render(button_text, True, (255, 255, 255))
                 text_rect = text_surface.get_rect(center = button_rect.center)
@@ -70,7 +67,6 @@ class App:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-
             pygame.display.flip()
             self.clock.tick(60)
 

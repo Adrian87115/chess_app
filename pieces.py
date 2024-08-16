@@ -61,32 +61,27 @@ class Pawn(Piece):
         if not self.has_moved:
             new_x = curr_x
             new_y = curr_y + 2 * direction
-            # ahead 2
             if self.isSquareEmpty(new_x, new_y, board) and self.isSquareEmpty(new_x, curr_y + direction, board):
                 if not simulateMoveAndCheck(self, (new_x, new_y), board):
                     valid_moves.append((new_x, new_y))
 
         new_x = curr_x
         new_y = curr_y + direction
-        # ahead 1
         if self.isSquareEmpty(new_x, new_y, board):
             if not simulateMoveAndCheck(self, (new_x, new_y), board):
                 valid_moves.append((new_x, new_y))
 
-        # capture left
         new_x = curr_x - 1
         new_y = curr_y + direction
         if self.isSquareEnemyPiece(new_x, new_y, board):
             if not simulateMoveAndCheck(self, (new_x, new_y), board):
                 valid_moves.append((new_x, new_y))
 
-        # capture right
         new_x = curr_x + 1
         new_y = curr_y + direction
         if self.isSquareEnemyPiece(new_x, new_y, board):
             if not simulateMoveAndCheck(self, (new_x, new_y), board):
                 valid_moves.append((new_x, new_y))
-
         return valid_moves
 
     def move(self, new_x, new_y, board):
@@ -150,7 +145,6 @@ class Rook(Piece):
 
         if not (dx <= 2 or dy <= 2):
             return moves
-
         moves = self.validMoves(board, 0)
 
         if self.x == king_x:
@@ -216,7 +210,6 @@ class Bishop(Piece):
             d_x, d_y = direction
             new_x = curr_x + d_x
             new_y = curr_y + d_y
-
             while 0 <= new_x < 8 and 0 <= new_y < 8:
                 if self.isSquareEmpty(new_x, new_y, board):
                     if move_or_king:
@@ -239,13 +232,10 @@ class Bishop(Piece):
 
     def threatensKing(self, king_x, king_y, board):
         moves = []
-
         dx = abs(self.x - king_x)
         dy = abs(self.y - king_y)
-
         if not (dx - dy <= 2):
             return moves
-
         moves = self.validMoves(board, 0)
 
         if dx == dy:
@@ -254,7 +244,6 @@ class Bishop(Piece):
             next_x = king_x + d_x
             next_y = king_y + d_y
             moves.append((next_x, next_y))
-
         return moves
 
 class Queen(Piece):
@@ -296,17 +285,14 @@ class Queen(Piece):
                 else:
                     break
         return valid_moves
+
     def threatensKing(self, king_x, king_y, board):
         moves = []
-
         dx = abs(self.x - king_x)
         dy = abs(self.y - king_y)
-
         if not ((dx <= 2 or dy <= 2) or dx - dy <= 2):
             return moves
-
         moves = self.validMoves(board, 0)
-
         if dx == dy:
             d_x = 1 if self.x < king_x else -1
             d_y = 1 if self.y < king_y else -1
@@ -324,7 +310,6 @@ class Queen(Piece):
                 moves.append((king_x + 1, king_y))
             else:
                 moves.append((king_x - 1, king_y))
-
         return moves
 
 class King(Piece):
@@ -350,6 +335,7 @@ class King(Piece):
 
     def getAllAllyMoves(self, board):
         ally_moves = dict()
+
         for row in board:
             for piece in row:
                 if piece != "." and piece.color == self.color:
@@ -361,7 +347,6 @@ class King(Piece):
         dx = abs(self.x - king_x)
         dy = abs(self.y - king_y)
         directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
-
         if not (dx <= 2 and dy <= 2):
             return moves
 
@@ -369,7 +354,6 @@ class King(Piece):
             new_x, new_y = self.x + d_x, self.y + d_y
             if 0 <= new_x < 8 and 0 <= new_y < 8:
                 moves.append((new_x, new_y))
-
         return moves
 
     def validMoves(self, board, move_or_king):
@@ -404,7 +388,6 @@ def simulateMoveAndCheck(piece, move, board):
     new_board[new_y][new_x] = piece
     piece.x, piece.y = new_x, new_y
     king = next(p for row in new_board for p in row if isinstance(p, King) and p.color == piece.color)
-
     result = king.isCheck(new_board)
     piece.x, piece.y = curr_x, curr_y
     new_board[curr_y][curr_x] = piece

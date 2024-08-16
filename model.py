@@ -35,6 +35,13 @@ class QTrainer:
         self.epsilon = epsilon
         self.optimizer = optim.Adam(self.model.parameters(), lr = self.lr)
         self.criterion = nn.MSELoss()
+        self.game_count = 0
+
+    def update_learning_rate(self):
+        if self.game_count == 50 or self.game_count == 100 or self.game_count == 150:
+            self.lr = self.lr * 0.1
+            for param_group in self.optimizer.param_groups:
+                param_group['lr'] = self.lr
 
     def trainStep(self, state, action, reward, next_state, done):
         state = torch.tensor(np.array(state), dtype=torch.float32)
@@ -73,6 +80,9 @@ class QTrainer:
         loss = self.criterion(pred, target)
         loss.backward()
         self.optimizer.step()
+
+    def increment_game_count(self):
+        self.game_count += 1
 
 
 def plot(scores_white, mean_scores_white, scores_black, mean_scores_black):

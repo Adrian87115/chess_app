@@ -13,10 +13,10 @@ class Agent:
     def __init__(self):
         self.n_games = 0
         self.epsilon = 0
-        self.gamma = 1
+        self.gamma = 0.95
         self.memory = deque(maxlen=MAX_MEMORY_SIZE)
         self.model = m.DQN(64, 256, 1)
-        self.load_model("model/model_white.pth")
+        # self.load_model("model/model_white.pth")
         self.trainer = m.QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
 
     def load_model(self, model_path):
@@ -152,8 +152,8 @@ def train():
         if n_turns >= 400:
             print("Pointless match")
             done = True
-            reward -= 300
-            score -= 300
+            reward -= 100
+            score -= 100
 
         if current_turn == "white":
             score_game_white += score
@@ -172,7 +172,9 @@ def train():
         if done:
             n_games += 1
             agent.n_games = n_games
-            if n_turns >= 400:
+            agent.trainer.increment_game_count()
+            agent.trainer.update_learning_rate()
+            if n_turns >= 350:
                 winner = "None"
             else:
                 winner = game.board.findWinner()
