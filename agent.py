@@ -3,20 +3,17 @@ import random
 import numpy as np
 from collections import deque
 import game as g
-import pieces as p
 import model as m
-import copy
 
-
-MAX_MEMORY_SIZE = 100000
-BATCH_SIZE = 1000
-LEARNING_RATE = 0.01
+MAX_MEMORY_SIZE = 1000000
+BATCH_SIZE = 10000
+LEARNING_RATE = 0.1
 
 class Agent:
     def __init__(self):
         self.n_games = 0
         self.epsilon = 0
-        self.gamma = 0
+        self.gamma = 1
         self.memory = deque(maxlen=MAX_MEMORY_SIZE)
         self.model = m.DQN(64, 256, 1)
         self.load_model("model/model_white.pth")
@@ -94,7 +91,6 @@ class Agent:
                             pieces_to_move[piece] = valid_moves
         final_piece = None
         final_move = None
-
         if random.randint(0, 100) < self.epsilon:
             final_piece = random.choice(list(pieces_to_move.keys()))
             final_move = random.choice(pieces_to_move[final_piece])
@@ -121,8 +117,8 @@ def train():
     agent_white = Agent()
     agent_black = Agent()
     game = g.Game()
-    record_white = 0
-    record_black = 0
+    record_white = -500
+    record_black = -500
     score_game_white = 0
     score_game_black = 0
     current_turn = "white"
@@ -135,6 +131,7 @@ def train():
     total_score_black = 0
 
     n_games = 0
+    n_turns = 0
 
     while True:
         if current_turn == "white":
@@ -148,17 +145,24 @@ def train():
         piece, move = agent.getAction(game.board, current_turn)
         reward, done, score = game.playStep(piece, move)
         if game.board.isStalemate("white") or game.board.isStalemate("black") or game.board.isInsufficientMaterial():
-            print("done")
-            reward -= 100
+            reward -= 10
+            score -= 10
+
+        n_turns += 1
+        if n_turns >= 400:
+            print("Pointless match")
+            done = True
+            reward -= 300
+            score -= 300
+
         if current_turn == "white":
             score_game_white += score
-            score_game_black -= score
+            score_game_black -= abs(score)
         else:
             score_game_black += score
-            score_game_white -= score
+            score_game_white -= abs(score)
 
         state_new = agent.getState(game.board)
-
 
         agent.trainShortMemory(state_old, move, reward, state_new, done)
         agent.remember(state_old, move, reward, state_new, done)
@@ -168,16 +172,20 @@ def train():
         if done:
             n_games += 1
             agent.n_games = n_games
-            winner = game.board.findWinner()
+            if n_turns >= 400:
+                winner = "None"
+            else:
+                winner = game.board.findWinner()
             game.resetGame()
-            track_error_boards = []
             agent_white.trainLongMemory()
             agent_black.trainLongMemory()
             if score_game_black > record_black:
                 record_black = score_game_black
-                agent_black.model.saveModel("model_black.pth")
             if score_game_white > record_white:
                 record_white = score_game_white
+            if score_game_black > 250:
+                agent_black.model.saveModel("model_black.pth")
+            if score_game_white > 250:
                 agent_white.model.saveModel("model_white.pth")
             print("Game ", agent.n_games, ", Score white ", score_game_white, ", Score black ", score_game_black, ", Winner: ", winner, ", Record white: ", record_white, ", Record black: ", record_black)
 
@@ -188,15 +196,13 @@ def train():
 
             plot_scores_black.append(score_game_black)
             total_score_black += score_game_black
-            mean_score_black = total_score_black / agent.n_games# something wrong with mean values
+            mean_score_black = total_score_black / agent.n_games
             plot_mean_scores_black.append(mean_score_black)
 
             m.plot(plot_scores_white, plot_mean_scores_white, plot_scores_black, plot_mean_scores_black)
 
-
-
             current_turn = "white"
             score_game_white = 0
             score_game_black = 0
-
+            n_turns = 0
         current_turn = "black" if current_turn == "white" else "white"

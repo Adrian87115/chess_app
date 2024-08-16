@@ -181,7 +181,7 @@ class Game:
 
         if self.board.isCheckmate("white") or self.board.isCheckmate("black"):
             print("checkmate")
-            reward += 1000
+            reward += 300
             done = True
         elif self.board.isCheck("white") or self.board.isCheck("black"):
             reward += 3
@@ -414,7 +414,7 @@ class Game:
                     else:
                         self.messages.append("Not part of the board")
 
-            if self.current_turn == ai_color and not self.king_check:
+            if self.current_turn == ai_color:
                 piece, new_position = ai_agent.getAction(self.board, self.current_turn)
                 if piece and new_position:
                     x_end, y_end = new_position
@@ -440,8 +440,6 @@ class Game:
                         self.king_pos = self.board.getKingPosition(self.current_turn) if self.king_check else None
                     else:
                         self.messages.append(f"Invalid move for {piece}")
-                else:
-                    self.messages.append("No valid moves available")
 
             self.displayPanel(screen)
             self.drawBoard(screen)
@@ -460,6 +458,19 @@ class Game:
                                      pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
             self.drawPieces(self.board.board, screen)
             self.drawMessages(screen)
+
+            if not self.running:
+                self.messages.append("Game Over. Press Q to quit or R to restart.")
+
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_q:
+                            pygame.quit()
+                            sys.exit()
+                        elif event.key == pygame.K_r:
+                            self.resetGame()
+                            self.running = False
+
             pygame.display.flip()
             clock.tick(60)
 
@@ -483,7 +494,7 @@ class Game:
                 if self.current_turn == "white":
                     piece, new_position = ai1.getAction(self.board, self.current_turn)
                 else:
-                    piece, new_position = ai2.getAction(self.board, self.current_turn)
+                    piece, new_position = ai2.getRandomMove(self.board, self.current_turn)
 
                 if piece and new_position:
                     x_start, y_start = piece.x, piece.y
@@ -494,7 +505,6 @@ class Game:
                         if isinstance(piece, p.Pawn) and (y_end == 0 or y_end == 7):
                             self.board.board[y_end][x_end] = p.Queen(x_end, y_end, self.current_turn)
                         self.current_turn = "black" if self.current_turn == "white" else "white"
-                        # self.messages.append(f"{self.current_turn.title()}'s turn")
                         self.king_check = self.board.isKingInCheck(self.current_turn)
                         if self.king_check:
                             if self.board.isCheckmate(self.current_turn):

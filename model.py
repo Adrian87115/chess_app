@@ -4,18 +4,20 @@ import torch.optim as optim
 import torch.nn.functional as f
 import os
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+import numpy as np
 
 # Deep Q Learning agent
 class DQN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, output_size)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         x = f.relu(self.linear1(x))
-        x = self.linear2(x)
+        x = f.relu(self.linear2(x))
+        x = self.linear3(x)
         return x
 
     def saveModel(self, file_name = "model.pth"):
@@ -35,31 +37,40 @@ class QTrainer:
         self.criterion = nn.MSELoss()
 
     def trainStep(self, state, action, reward, next_state, done):
-        state = torch.tensor(state, dtype = torch.float32)
-        next_state = torch.tensor(next_state, dtype = torch.float32)
-        action = torch.tensor(action, dtype=torch.long).unsqueeze(1)
+        state = torch.tensor(np.array(state), dtype=torch.float32)
+        next_state = torch.tensor(np.array(next_state), dtype=torch.float32)
+        action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float32)
         done = torch.tensor(done, dtype=torch.bool)
 
         if len(state.shape) == 1:
-            state = torch.unsqueeze(state, 0)
-            next_state = torch.unsqueeze(next_state, 0)
-            action = torch.unsqueeze(action, 0)
-            reward = torch.unsqueeze(reward, 0)
-            done = torch.unsqueeze(done, 0)
+            state = state.unsqueeze(0)
+            next_state = next_state.unsqueeze(0)
+            action = action.unsqueeze(0)
+            reward = reward.unsqueeze(0)
+            done = done.unsqueeze(0)
 
         pred = self.model(state)
         target = pred.clone()
 
+        with torch.no_grad():
+            next_q_values = self.model(next_state).max(dim=1)[0]
+
         for i in range(len(done)):
             q_new = reward[i]
             if not done[i]:
-                q_new = reward[i] + self.gamma * torch.max(self.model(next_state[i]))
-            action_index = action[i].item() if len(action[i].shape) == 0 else torch.argmax(action[i]).item()#action_index = action[i].item()
+                q_new += self.gamma * next_q_values[i]
+
+            if action[i].dim() > 0 and action[i].numel() > 1:
+                action_index = torch.argmax(action[i]).item()
+            else:
+                action_index = action[i].item()
+
             if action_index < target.shape[1]:
                 target[i][action_index] = q_new
+
         self.optimizer.zero_grad()
-        loss = self.criterion(target, pred)
+        loss = self.criterion(pred, target)
         loss.backward()
         self.optimizer.step()
 
