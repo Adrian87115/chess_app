@@ -125,18 +125,29 @@ class Board:
         return True
 
     def isInsufficientMaterial(self):
-        pieces = []
+        white_pieces = []
+        black_pieces = []
         for row in self.board:
             for piece in row:
                 if piece != ".":
-                    pieces.append(piece)
-        if len(pieces) == 2:
+                    if piece.color == "white":
+                        white_pieces.append(piece)
+                    elif piece.color == "black":
+                        black_pieces.append(piece)
+        if self.checkInsufficientMaterial(white_pieces):
             return True
-        elif len(pieces) == 3:
+        if self.checkInsufficientMaterial(black_pieces):
+            return True
+        return False
+
+    def checkInsufficientMaterial(self, pieces):
+        if len(pieces) == 1:
+            return True
+        elif len(pieces) == 2:
             piece_shapes = [piece.shape.lower() for piece in pieces]
             if "ki" in piece_shapes and ("bi" in piece_shapes or "kn" in piece_shapes):
                 return True
-        elif len(pieces) == 4:
+        elif len(pieces) == 3:
             bishops = [piece for piece in pieces if piece.shape.lower() == "bi"]
             if len(bishops) == 2 and (bishops[0].color == bishops[1].color):
                 return True

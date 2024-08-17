@@ -16,7 +16,7 @@ class Agent:
         self.gamma = 0.95
         self.memory = deque(maxlen=MAX_MEMORY_SIZE)
         self.model = m.DQN(64, 256, 1)
-        # self.load_model("model/model_white.pth")
+        self.load_model("model/model_white.pth")
         self.trainer = m.QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
 
     def load_model(self, model_path):
@@ -112,6 +112,11 @@ class Agent:
                         final_move = move
         return final_piece, final_move
 
+def convertMoveTo1D(start_row, start_col, end_row, end_col):
+    start_1D = start_row * 8 + start_col
+    end_1D = end_row * 8 + end_col
+    move_1D = end_1D - start_1D
+    return move_1D
 
 def train():
     agent_white = Agent()
@@ -149,7 +154,7 @@ def train():
             score -= 10
 
         n_turns += 1
-        if n_turns >= 400:
+        if n_turns >= 350:
             print("Pointless match")
             done = True
             reward -= 100
@@ -163,7 +168,7 @@ def train():
             score_game_white -= abs(score)
 
         state_new = agent.getState(game.board)
-
+        move = convertMoveTo1D(piece.x, piece.y, move[0], move[1])
         agent.trainShortMemory(state_old, move, reward, state_new, done)
         agent.remember(state_old, move, reward, state_new, done)
         opponent.trainShortMemory(state_old, move, -(abs(reward)), state_new, done)
@@ -199,6 +204,87 @@ def train():
             plot_scores_black.append(score_game_black)
             total_score_black += score_game_black
             mean_score_black = total_score_black / agent.n_games
+            plot_mean_scores_black.append(mean_score_black)
+
+            m.plot(plot_scores_white, plot_mean_scores_white, plot_scores_black, plot_mean_scores_black)
+
+            current_turn = "white"
+            score_game_white = 0
+            score_game_black = 0
+            n_turns = 0
+        current_turn = "black" if current_turn == "white" else "white"
+
+def test():
+    agent_white = Agent()
+    agent_black = Agent()
+    game = g.Game()
+    record_white = -500
+    record_black = -500
+    score_game_white = 0
+    score_game_black = 0
+    current_turn = "white"
+
+    plot_scores_white = []
+    plot_mean_scores_white = []
+    total_score_white = 0
+    plot_scores_black = []
+    plot_mean_scores_black = []
+    total_score_black = 0
+
+    n_games = 0
+    n_turns = 0
+
+    while True:
+        if current_turn == "white":
+            agent = agent_white
+        else:
+            agent = agent_black
+
+        if current_turn == "white":
+            piece, move = agent.getAction(game.board, current_turn)
+        else:
+            piece, move = agent.getRandomMove(game.board, current_turn)
+        reward, done, score = game.playStep(piece, move)
+        if game.board.isStalemate("white") or game.board.isStalemate("black") or game.board.isInsufficientMaterial():
+            reward -= 10
+            score -= 10
+
+        n_turns += 1
+        if n_turns >= 350:
+            print("Pointless match")
+            done = True
+            reward -= 100
+            score -= 100
+
+        if current_turn == "white":
+            score_game_white += score
+            score_game_black -= abs(score)
+        else:
+            score_game_black += score
+            score_game_white -= abs(score)
+
+        if done:
+            n_games += 1
+            if n_turns >= 350:
+                winner = "None"
+            else:
+                winner = game.board.findWinner()
+            game.resetGame()
+            if score_game_black > record_black:
+                record_black = score_game_black
+            if score_game_white > record_white:
+                record_white = score_game_white
+            print("Game ", agent.n_games, ", Score white ", score_game_white, ", Score black ", score_game_black,
+                  ", Winner: ", winner, ", Record white: ", record_white, ", Record black: ", record_black)
+
+            plot_scores_white.append(score_game_white)
+            total_score_white += score_game_white
+            mean_score_white = total_score_white / n_games
+            plot_mean_scores_white.append(mean_score_white)
+
+            plot_scores_black.append(score_game_black)
+            total_score_black += score_game_black
+            mean_score_black = total_score_black / n_games
             plot_mean_scores_black.append(mean_score_black)
 
             m.plot(plot_scores_white, plot_mean_scores_white, plot_scores_black, plot_mean_scores_black)

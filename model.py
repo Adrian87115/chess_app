@@ -11,14 +11,33 @@ class DQN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
+        self.norm1 = nn.LayerNorm(hidden_size)
+        self.dropout1 = nn.Dropout(p=0.3)
         self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.linear3 = nn.Linear(hidden_size, output_size)
+        self.norm2 = nn.LayerNorm(hidden_size)
+        self.dropout2 = nn.Dropout(p=0.3)
+        self.residual_linear = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, hidden_size)
+        self.norm3 = nn.LayerNorm(hidden_size)
+        self.dropout3 = nn.Dropout(p=0.3)
+        self.linear4 = nn.Linear(hidden_size, hidden_size)
+        self.norm4 = nn.LayerNorm(hidden_size)
+        self.dropout4 = nn.Dropout(p=0.3)
+        self.output_layer = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
-        x = f.relu(self.linear1(x))
-        x = f.relu(self.linear2(x))
-        x = self.linear3(x)
-        return x
+        x = f.relu(self.norm1(self.linear1(x)))
+        x = self.dropout1(x)
+        x2 = f.relu(self.norm2(self.linear2(x)))
+        x2 = self.dropout2(x2)
+        res = self.residual_linear(x)
+        x2 += res
+        x3 = f.relu(self.norm3(self.linear3(x2)))
+        x3 = self.dropout3(x3)
+        x4 = f.relu(self.norm4(self.linear4(x3)))
+        x4 = self.dropout4(x4)
+        output = self.output_layer(x4)
+        return output
 
     def saveModel(self, file_name = "model.pth"):
         model_folder = "model"
@@ -34,12 +53,12 @@ class QTrainer:
         self.gamma = gamma
         self.epsilon = epsilon
         self.optimizer = optim.Adam(self.model.parameters(), lr = self.lr)
-        self.criterion = nn.MSELoss()
+        self.criterion = nn.SmoothL1Loss()
         self.game_count = 0
 
     def update_learning_rate(self):
-        if self.game_count == 50 or self.game_count == 100 or self.game_count == 150:
-            self.lr = self.lr * 0.1
+        if self.game_count in [50, 100, 150]:
+            self.lr *= 0.1
             for param_group in self.optimizer.param_groups:
                 param_group['lr'] = self.lr
 

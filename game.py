@@ -159,6 +159,10 @@ class Game:
         new_tile_current_piece = self.board.board[move[1]][move[0]]
         x_end, y_end = move
         self.board.board = selected_piece.move2(x_end, y_end, self.board.board)
+        if (selected_piece.y == 0 or selected_piece.y == 7) and isinstance(selected_piece, p.Pawn):
+            selected_piece = p.Queen(selected_piece.x, selected_piece.y, selected_piece.color)
+            self.board.board[selected_piece.y][selected_piece.x] = selected_piece
+
         reward = 0
         done = False
         if will_promote:
