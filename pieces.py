@@ -57,26 +57,22 @@ class Pawn(Piece):
         valid_moves = []
         curr_x = self.x
         curr_y = self.y
-
         if not self.has_moved:
             new_x = curr_x
             new_y = curr_y + 2 * direction
             if self.isSquareEmpty(new_x, new_y, board) and self.isSquareEmpty(new_x, curr_y + direction, board):
                 if not simulateMoveAndCheck(self, (new_x, new_y), board):
                     valid_moves.append((new_x, new_y))
-
         new_x = curr_x
         new_y = curr_y + direction
         if self.isSquareEmpty(new_x, new_y, board):
             if not simulateMoveAndCheck(self, (new_x, new_y), board):
                 valid_moves.append((new_x, new_y))
-
         new_x = curr_x - 1
         new_y = curr_y + direction
         if self.isSquareEnemyPiece(new_x, new_y, board):
             if not simulateMoveAndCheck(self, (new_x, new_y), board):
                 valid_moves.append((new_x, new_y))
-
         new_x = curr_x + 1
         new_y = curr_y + direction
         if self.isSquareEnemyPiece(new_x, new_y, board):
@@ -119,7 +115,6 @@ class Rook(Piece):
             d_x, d_y = direction
             new_x = curr_x + d_x
             new_y = curr_y + d_y
-
             while 0 <= new_x < 8 and 0 <= new_y < 8:
                 if self.isSquareEmpty(new_x, new_y, board):
                     if not move_or_king or not simulateMoveAndCheck(self, (new_x, new_y), board):
@@ -134,19 +129,15 @@ class Rook(Piece):
                     if not move_or_king:
                         valid_moves.append((new_x, new_y))
                     break
-
         return valid_moves
 
     def threatensKing(self, king_x, king_y, board):
         moves = []
-
         dx = abs(self.x - king_x)
         dy = abs(self.y - king_y)
-
         if not (dx <= 2 or dy <= 2):
             return moves
         moves = self.validMoves(board, 0)
-
         if self.x == king_x:
             if self.y < king_y:
                 moves.append((king_x, king_y + 1))
@@ -177,7 +168,6 @@ class Knight(Piece):
             d_x, d_y = direction
             new_x = curr_x + d_x
             new_y = curr_y + d_y
-
             if 0 <= new_x < 8 and 0 <= new_y < 8:
                 if move_or_king:
                     if self.isSquareEmpty(new_x, new_y, board) or self.isSquareEnemyPiece(new_x, new_y, board):
@@ -185,7 +175,6 @@ class Knight(Piece):
                             valid_moves.append((new_x, new_y))
                 else:
                     valid_moves.append((new_x, new_y))
-
         return valid_moves
 
     def threatensKing(self, king_x, king_y, board):
@@ -237,7 +226,6 @@ class Bishop(Piece):
         if not (dx - dy <= 2):
             return moves
         moves = self.validMoves(board, 0)
-
         if dx == dy:
             d_x = 1 if self.x < king_x else -1
             d_y = 1 if self.y < king_y else -1
@@ -265,7 +253,6 @@ class Queen(Piece):
             d_x, d_y = direction
             new_x = curr_x + d_x
             new_y = curr_y + d_y
-
             while 0 <= new_x < 8 and 0 <= new_y < 8:
                 if self.isSquareEmpty(new_x, new_y, board):
                     if move_or_king:
@@ -299,7 +286,6 @@ class Queen(Piece):
             next_x = king_x + d_x
             next_y = king_y + d_y
             moves.append((next_x, next_y))
-
         if self.x == king_x:
             if self.y < king_y:
                 moves.append((king_x, king_y + 1))
@@ -362,6 +348,7 @@ class King(Piece):
         curr_x = self.x
         curr_y = self.y
         invalid_moves = self.getAllEnemyMoves(board)
+
         for d_x, d_y in directions:
             new_x = curr_x + d_x
             new_y = curr_y + d_y

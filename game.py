@@ -31,6 +31,7 @@ class Game:
 
     def drawBoard(self, screen):
         colors = [pygame.Color(160, 160, 160), pygame.Color(60, 60, 60)]
+
         for row in range(8):
             for col in range(8):
                 color = colors[(row + col) % 2]
@@ -162,12 +163,10 @@ class Game:
         if (selected_piece.y == 0 or selected_piece.y == 7) and isinstance(selected_piece, p.Pawn):
             selected_piece = p.Queen(selected_piece.x, selected_piece.y, selected_piece.color)
             self.board.board[selected_piece.y][selected_piece.x] = selected_piece
-
         reward = 0
         done = False
         if will_promote:
             reward += 10
-
         if new_tile_current_piece == ".":
             pass
         elif new_tile_current_piece.shape.title() == "P":
@@ -178,7 +177,6 @@ class Game:
             reward += 3
         elif new_tile_current_piece.shape.title() == "Q":
             reward += 10
-
         if self.board.isCheckmate("white") or self.board.isCheckmate("black"):
             print("checkmate")
             reward += 300
@@ -197,6 +195,7 @@ class Game:
 
     def humanVsHuman(self, screen, clock):
         promoted_msg = False
+
         while self.running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -248,40 +247,29 @@ class Game:
                                                         self.running = False
                                                         pygame.quit()
                                                         sys.exit()
-
                                                 self.displayPanel(screen)
                                                 self.drawBoard(screen)
                                                 self.drawPieces(self.board.board, screen)
                                                 self.drawMessages(screen)
-                                                new_piece = self.displayPromotion(
-                                                    screen, self.selected_piece.x, self.selected_piece.y, self.selected_piece.color
-                                                )
-
+                                                new_piece = self.displayPromotion(screen, self.selected_piece.x, self.selected_piece.y, self.selected_piece.color)
                                                 pygame.display.flip()
                                                 clock.tick(60)
-
                                             self.board.board[self.selected_piece.y][self.selected_piece.x] = new_piece
                                             promoted_msg = True
-
                                         self.current_turn = "black" if self.current_turn == "white" else "white"
                                         self.messages.append(f"Moved {self.selected_piece} to ({x}, {y})")
                                         if promoted_msg:
-                                            self.messages.append(
-                                                f"Pawn promoted to {new_piece.__class__.__name__} at ({self.selected_piece.x}, {self.selected_piece.y})"
-                                            )
+                                            self.messages.append(f"Pawn promoted to {new_piece.__class__.__name__} at ({self.selected_piece.x}, {self.selected_piece.y})")
                                             promoted_msg = False
                                         self.selected = False
                                         self.valid_moves = []
                                         self.king_check = self.board.isKingInCheck(self.current_turn)
-
                                         if self.king_check and self.board.isCheckmate(self.current_turn):
                                             self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
                                         elif not self.king_check and self.board.isStalemate(self.current_turn):
                                             self.messages.append("Stalemate! The game is a draw.")
-
                                         if self.board.isInsufficientMaterial():
                                             self.messages.append("Draw due to insufficient material.")
-
                                         self.king_pos = self.board.getKingPosition(self.current_turn) if self.king_check else None
                                     else:
                                         self.messages.append(f"Invalid move for {self.selected_piece}")
@@ -291,20 +279,15 @@ class Game:
                         self.messages.append("Not part of the board")
             self.displayPanel(screen)
             self.drawBoard(screen)
-
             if self.king_check and self.king_pos:
-                pygame.draw.rect(screen, pygame.Color(255, 0, 0),
-                                 pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
+                pygame.draw.rect(screen, pygame.Color(255, 0, 0), pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
             if self.selected:
-                pygame.draw.rect(screen, pygame.Color(0, 0, 150),
-                                 pygame.Rect(self.selected_piece.x * 65, self.selected_piece.y * 65, 65, 65), 3)
+                pygame.draw.rect(screen, pygame.Color(0, 0, 150), pygame.Rect(self.selected_piece.x * 65, self.selected_piece.y * 65, 65, 65), 3)
             for move in self.valid_moves:
                 if self.selected_piece.isSquareEnemyPiece(move[0], move[1], self.board.board):
-                    pygame.draw.rect(screen, pygame.Color(255, 101, 0),
-                                     pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
+                    pygame.draw.rect(screen, pygame.Color(255, 101, 0), pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
                 else:
-                    pygame.draw.rect(screen, pygame.Color(0, 255, 0),
-                                     pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
+                    pygame.draw.rect(screen, pygame.Color(0, 255, 0), pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
             self.drawPieces(self.board.board, screen)
             self.drawMessages(screen)
             pygame.display.flip()
@@ -370,19 +353,15 @@ class Game:
                                                         self.running = False
                                                         pygame.quit()
                                                         sys.exit()
-
                                                 self.displayPanel(screen)
                                                 self.drawBoard(screen)
                                                 self.drawPieces(self.board.board, screen)
                                                 self.drawMessages(screen)
                                                 new_piece = self.displayPromotion(screen, self.selected_piece.x, self.selected_piece.y, self.selected_piece.color)
-
                                                 pygame.display.flip()
                                                 clock.tick(60)
-
                                             self.board.board[self.selected_piece.y][self.selected_piece.x] = new_piece
                                             promoted_msg = True
-
                                         self.current_turn = "black" if self.current_turn == "white" else "white"
                                         self.messages.append(f"Moved {self.selected_piece} to ({x}, {y})")
                                         if promoted_msg:
@@ -391,18 +370,15 @@ class Game:
                                         self.selected = False
                                         self.valid_moves = []
                                         self.king_check = self.board.isKingInCheck(self.current_turn)
-
                                         if self.king_check and self.board.isCheckmate(self.current_turn):
                                             self.messages.append(f"Checkmate! {self.current_turn.title()} loses.")
                                             self.running = False
                                         elif not self.king_check and self.board.isStalemate(self.current_turn):
                                             self.messages.append("Stalemate! The game is a draw.")
                                             self.running = False
-
                                         if self.board.isInsufficientMaterial():
                                             self.messages.append("Draw due to insufficient material.")
                                             self.running = False
-
                                         self.king_pos = self.board.getKingPosition(
                                             self.current_turn) if self.king_check else None
                                     else:
@@ -411,7 +387,6 @@ class Game:
                                     self.messages.append("Move not allowed")
                     else:
                         self.messages.append("Not part of the board")
-
             if self.current_turn == ai_color:
                 piece, new_position = ai_agent.getAction(self.board, self.current_turn)
                 if piece and new_position:
@@ -430,15 +405,12 @@ class Game:
                             elif self.board.isStalemate(self.current_turn):
                                 self.messages.append("Stalemate! The game is a draw.")
                                 self.running = False
-
                         if self.board.isInsufficientMaterial():
                             self.messages.append("Draw due to insufficient material.")
                             self.running = False
-
                         self.king_pos = self.board.getKingPosition(self.current_turn) if self.king_check else None
                     else:
                         self.messages.append(f"Invalid move for {piece}")
-
             self.displayPanel(screen)
             self.drawBoard(screen)
             if self.king_check and self.king_pos:
@@ -456,10 +428,8 @@ class Game:
                                      pygame.Rect(move[0] * 65, move[1] * 65, 65, 65), 3)
             self.drawPieces(self.board.board, screen)
             self.drawMessages(screen)
-
             if not self.running:
                 self.messages.append("Game Over. Press Q to quit or R to restart.")
-
                 for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_q:
@@ -481,22 +451,18 @@ class Game:
         while self.running:
             current_time = pygame.time.get_ticks()
             elapsed_time = current_time - last_move_time
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-
             if elapsed_time >= 100 and not game_over:
                 if self.current_turn == "white":
                     piece, new_position = ai1.getAction(self.board, self.current_turn)
                 else:
                     piece, new_position = ai2.getAction(self.board, self.current_turn)
-
                 if piece and new_position:
                     x_start, y_start = piece.x, piece.y
                     x_end, y_end = new_position
-
                     did_move = piece.move(x_end, y_end, self.board.board)
                     if did_move:
                         if isinstance(piece, p.Pawn) and (y_end == 0 or y_end == 7):
@@ -510,11 +476,9 @@ class Game:
                             elif self.board.isStalemate(self.current_turn):
                                 self.messages.append("Stalemate! The game is a draw.")
                                 game_over = True
-
                         if self.board.isInsufficientMaterial():
                             self.messages.append("Draw due to insufficient material.")
                             game_over = True
-
                         self.king_pos = self.board.getKingPosition(self.current_turn) if self.king_check else None
                     else:
                         self.messages.append(f"Invalid move for {piece}")
@@ -526,11 +490,9 @@ class Game:
             self.drawPieces(self.board.board, screen)
             self.drawMessages(screen)
             if self.king_check and self.king_pos:
-                pygame.draw.rect(screen, pygame.Color(255, 0, 0),
-                                 pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
+                pygame.draw.rect(screen, pygame.Color(255, 0, 0), pygame.Rect(self.king_pos[0] * 65, self.king_pos[1] * 65, 65, 65), 3)
             if game_over:
                 self.messages.append("Game Over. Press Q to quit or R to restart.")
-
                 for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_q:
@@ -539,6 +501,5 @@ class Game:
                         elif event.key == pygame.K_r:
                             self.resetGame()
                             game_over = False
-
             pygame.display.flip()
             clock.tick(60)

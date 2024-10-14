@@ -116,6 +116,7 @@ class Board:
     def isStalemate(self, color):
         if self.isKingInCheck(color):
             return False
+
         for y in range(8):
             for x in range(8):
                 piece = self.board[y][x]
@@ -127,6 +128,7 @@ class Board:
     def isInsufficientMaterial(self):
         white_pieces = []
         black_pieces = []
+
         for row in self.board:
             for piece in row:
                 if piece != ".":

@@ -68,14 +68,12 @@ class QTrainer:
         action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float32)
         done = torch.tensor(done, dtype=torch.bool)
-
         if len(state.shape) == 1:
             state = state.unsqueeze(0)
             next_state = next_state.unsqueeze(0)
             action = action.unsqueeze(0)
             reward = reward.unsqueeze(0)
             done = done.unsqueeze(0)
-
         pred = self.model(state)
         target = pred.clone()
 
@@ -86,15 +84,12 @@ class QTrainer:
             q_new = reward[i]
             if not done[i]:
                 q_new += self.gamma * next_q_values[i]
-
             if action[i].dim() > 0 and action[i].numel() > 1:
                 action_index = torch.argmax(action[i]).item()
             else:
                 action_index = action[i].item()
-
             if action_index < target.shape[1]:
                 target[i][action_index] = q_new
-
         self.optimizer.zero_grad()
         loss = self.criterion(pred, target)
         loss.backward()
@@ -103,25 +98,20 @@ class QTrainer:
     def increment_game_count(self):
         self.game_count += 1
 
-
 def plot(scores_white, mean_scores_white, scores_black, mean_scores_black):
     plt.clf()
     plt.title('Training')
     plt.xlabel('Number of Games')
     plt.ylabel('Score')
-
     plt.plot(scores_white, 'r-', label = 'Scores White')
     plt.plot(mean_scores_white, 'r--', label = 'Mean Scores White')
     plt.plot(scores_black, 'b-', label = 'Scores Black')
     plt.plot(mean_scores_black, 'b--', label = 'Mean Scores Black')
-
     plt.legend()
     plt.xlim(xmin = 0)
-
     plt.text(len(scores_white) - 1, scores_white[-1], str(scores_white[-1]), color = 'red')
     plt.text(len(mean_scores_white) - 1, mean_scores_white[-1], str(mean_scores_white[-1]), color = 'red')
     plt.text(len(scores_black) - 1, scores_black[-1], str(scores_black[-1]), color = 'blue')
     plt.text(len(mean_scores_black) - 1, mean_scores_black[-1], str(mean_scores_black[-1]), color = 'blue')
-
     plt.show(block=False)
     plt.pause(0.1)

@@ -16,10 +16,10 @@ class Agent:
         self.gamma = 0.95
         self.memory = deque(maxlen=MAX_MEMORY_SIZE)
         self.model = m.DQN(64, 256, 1)
-        self.load_model("model/model_white.pth")
+        # self.loadModel("model/model_white.pth")
         self.trainer = m.QTrainer(self.model, LEARNING_RATE, self.gamma, self.epsilon)
 
-    def load_model(self, model_path):
+    def loadModel(self, model_path):
         state_dict = torch.load(model_path)
         self.model.load_state_dict(state_dict)
         self.model.eval()
@@ -101,10 +101,8 @@ class Agent:
                     new_state = state.simulateMoveObject(piece, move)
                     new_state_board = self.boardToArray(new_state)
                     state_tensor = torch.tensor(new_state_board, dtype = torch.float32).unsqueeze(0)
-
                     with torch.no_grad():
                         prediction = self.model(state_tensor)
-
                     score = prediction.item()
                     if score > best_score:
                         best_score = score
@@ -127,14 +125,12 @@ def train():
     score_game_white = 0
     score_game_black = 0
     current_turn = "white"
-
     plot_scores_white = []
     plot_mean_scores_white = []
     total_score_white = 0
     plot_scores_black = []
     plot_mean_scores_black = []
     total_score_black = 0
-
     n_games = 0
     n_turns = 0
 
@@ -145,35 +141,30 @@ def train():
         else:
             agent = agent_black
             opponent = agent_white
-
         state_old = agent.getState(game.board)
         piece, move = agent.getAction(game.board, current_turn)
         reward, done, score = game.playStep(piece, move)
         if game.board.isStalemate("white") or game.board.isStalemate("black") or game.board.isInsufficientMaterial():
             reward -= 10
             score -= 10
-
         n_turns += 1
         if n_turns >= 350:
             print("Pointless match")
             done = True
             reward -= 100
             score -= 100
-
         if current_turn == "white":
             score_game_white += score
             score_game_black -= abs(score)
         else:
             score_game_black += score
             score_game_white -= abs(score)
-
         state_new = agent.getState(game.board)
         move = convertMoveTo1D(piece.x, piece.y, move[0], move[1])
         agent.trainShortMemory(state_old, move, reward, state_new, done)
         agent.remember(state_old, move, reward, state_new, done)
         opponent.trainShortMemory(state_old, move, -(abs(reward)), state_new, done)
         opponent.remember(state_old, move, -(abs(reward)), state_new, done)
-
         if done:
             n_games += 1
             agent.n_games = n_games
@@ -195,19 +186,15 @@ def train():
             if score_game_white > 250:
                 agent_white.model.saveModel("model_white.pth")
             print("Game ", agent.n_games, ", Score white ", score_game_white, ", Score black ", score_game_black, ", Winner: ", winner, ", Record white: ", record_white, ", Record black: ", record_black)
-
             plot_scores_white.append(score_game_white)
             total_score_white += score_game_white
             mean_score_white = total_score_white / agent.n_games
             plot_mean_scores_white.append(mean_score_white)
-
             plot_scores_black.append(score_game_black)
             total_score_black += score_game_black
             mean_score_black = total_score_black / agent.n_games
             plot_mean_scores_black.append(mean_score_black)
-
             m.plot(plot_scores_white, plot_mean_scores_white, plot_scores_black, plot_mean_scores_black)
-
             current_turn = "white"
             score_game_white = 0
             score_game_black = 0
@@ -223,14 +210,12 @@ def test():
     score_game_white = 0
     score_game_black = 0
     current_turn = "white"
-
     plot_scores_white = []
     plot_mean_scores_white = []
     total_score_white = 0
     plot_scores_black = []
     plot_mean_scores_black = []
     total_score_black = 0
-
     n_games = 0
     n_turns = 0
 
@@ -239,7 +224,6 @@ def test():
             agent = agent_white
         else:
             agent = agent_black
-
         if current_turn == "white":
             piece, move = agent.getAction(game.board, current_turn)
         else:
@@ -248,21 +232,18 @@ def test():
         if game.board.isStalemate("white") or game.board.isStalemate("black") or game.board.isInsufficientMaterial():
             reward -= 10
             score -= 10
-
         n_turns += 1
         if n_turns >= 350:
             print("Pointless match")
             done = True
             reward -= 100
             score -= 100
-
         if current_turn == "white":
             score_game_white += score
             score_game_black -= abs(score)
         else:
             score_game_black += score
             score_game_white -= abs(score)
-
         if done:
             n_games += 1
             if n_turns >= 350:
@@ -274,21 +255,17 @@ def test():
                 record_black = score_game_black
             if score_game_white > record_white:
                 record_white = score_game_white
-            print("Game ", agent.n_games, ", Score white ", score_game_white, ", Score black ", score_game_black,
+            print("Game ", n_games, ", Score white ", score_game_white, ", Score black ", score_game_black,
                   ", Winner: ", winner, ", Record white: ", record_white, ", Record black: ", record_black)
-
             plot_scores_white.append(score_game_white)
             total_score_white += score_game_white
             mean_score_white = total_score_white / n_games
             plot_mean_scores_white.append(mean_score_white)
-
             plot_scores_black.append(score_game_black)
             total_score_black += score_game_black
             mean_score_black = total_score_black / n_games
             plot_mean_scores_black.append(mean_score_black)
-
             m.plot(plot_scores_white, plot_mean_scores_white, plot_scores_black, plot_mean_scores_black)
-
             current_turn = "white"
             score_game_white = 0
             score_game_black = 0

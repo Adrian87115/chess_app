@@ -43,8 +43,8 @@ class App:
             button_rect.centerx = screen_width // 2
             button_rect.y = start_y + i * (button_height + 10)
             buttons[label] = button_rect
-
         running = True
+
         while running:
             self.screen.fill((128, 128, 128))
             mouse_pos = pygame.mouse.get_pos()
@@ -62,7 +62,6 @@ class App:
                 text_surface = button_font.render(button_text, True, (255, 255, 255))
                 text_rect = text_surface.get_rect(center = button_rect.center)
                 self.screen.blit(text_surface, text_rect)
-
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
