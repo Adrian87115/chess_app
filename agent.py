@@ -9,7 +9,7 @@ MAX_MEMORY_SIZE = 1000000
 BATCH_SIZE = 10000
 LEARNING_RATE = 0.1
 
-class Agent:
+class Agent1:
     def __init__(self):
         self.n_games = 0
         self.epsilon = 0
@@ -117,8 +117,8 @@ def convertMoveTo1D(start_row, start_col, end_row, end_col):
     return move_1D
 
 def train():
-    agent_white = Agent()
-    agent_black = Agent()
+    agent_white = Agent1()
+    agent_black = Agent1()
     game = g.Game()
     record_white = -500
     record_black = -500
@@ -202,8 +202,8 @@ def train():
         current_turn = "black" if current_turn == "white" else "white"
 
 def test():
-    agent_white = Agent()
-    agent_black = Agent()
+    agent_white = Agent1()
+    agent_black = Agent1()
     game = g.Game()
     record_white = -500
     record_black = -500
@@ -271,3 +271,64 @@ def test():
             score_game_black = 0
             n_turns = 0
         current_turn = "black" if current_turn == "white" else "white"
+
+class MinimaxAgent:
+    def __init__(self, depth = 3):
+        self.depth = depth
+        self.piece_values = {"P": 1, "p": -1, "R": 5, "r": -5, "Kn": 3, "kn": -3, "B": 3, "b": -3, "Q": 9, "q": -9, "Ki": 100, "ki": -100}
+
+    def evaluate(self, board):
+        score = 0
+        for row in board.getBoard():
+            for piece in row:
+                if piece != ".":
+                    score += self.piece_values.get(piece.shape, 0)
+        return score
+
+    def minimax(self, board, depth, alpha, beta, maximizing_player):
+        if depth == 0 or board.isGameOver():
+            return self.evaluate(board), None
+        valid_moves = self.getAllValidMoves(board, "white" if maximizing_player else "black")
+        best_move = None
+        if maximizing_player:
+            max_eval = float('-inf')
+            for piece, move in valid_moves:
+                new_board = board.simulateMoveObject(piece, move)
+                evaluation, _ = self.minimax(new_board, depth - 1, alpha, beta, False)
+                if evaluation > max_eval:
+                    max_eval = evaluation
+                    best_move = (piece, move)
+                alpha = max(alpha, evaluation)
+                if beta <= alpha:
+                    break
+            return max_eval, best_move
+        else:
+            min_eval = float('inf')
+            for piece, move in valid_moves:
+                new_board = board.simulateMoveObject(piece, move)
+                evaluation, _ = self.minimax(new_board, depth - 1, alpha, beta, True)
+                if evaluation < min_eval:
+                    min_eval = evaluation
+                    best_move = (piece, move)
+                beta = min(beta, evaluation)
+                if beta <= alpha:
+                    break
+            return min_eval, best_move
+
+    def getAllValidMoves(self, board, current_turn):
+        moves = []
+        for row in board.getBoard():
+            for piece in row:
+                if piece != "." and piece.color == current_turn:
+                    valid_moves = piece.validMoves(board.getBoard(), 1)
+                    for move in valid_moves:
+                        moves.append((piece, move))
+        return moves
+
+    def getAction(self, board, current_turn):
+        _, best_move = self.minimax(board, self.depth, float('-inf'), float('inf'), current_turn == "white")
+        return best_move if best_move else self.getRandomMove(board, current_turn)
+
+    def getRandomMove(self, board, current_turn):
+        valid_moves = self.getAllValidMoves(board, current_turn)
+        return random.choice(valid_moves) if valid_moves else None
