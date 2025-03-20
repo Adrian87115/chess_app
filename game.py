@@ -1,7 +1,7 @@
 import board as b
 import pieces as p
 import app as a
-import agent as ai
+import agent as agent
 import pygame
 import sys
 
@@ -299,7 +299,7 @@ class Game:
             ai_color = "black"
         else:
             ai_color = "white"
-        ai_agent = ai.Agent()
+        ai_agent = agent.Agent1()
         self.current_turn = "white"
 
         while self.running:
@@ -442,8 +442,10 @@ class Game:
             clock.tick(60)
 
     def computerVsComputer(self, screen, clock):
-        ai1 = ai.Agent()
-        ai2 = ai.Agent()
+        # ai1 = agent.Agent1()
+        # ai2 = agent.Agent1()
+        ai1 = agent.MinimaxAgent()
+        ai2 = agent.MinimaxAgent()
         self.current_turn = "white"
         last_move_time = pygame.time.get_ticks()
         game_over = False
